@@ -5,15 +5,17 @@ class SettingsModel {
   RangeValues resultRange;
   RangeValues numberRange;
   bool checkAnswer;
+  bool checkNumberRange;
   double practicePercentage;
   bool showBlocks;
   int answerTimeSeconds;
 
   SettingsModel({
     this.isMultiplication = true,
-    this.resultRange = const RangeValues(1, 90),
-    this.numberRange = const RangeValues(1, 90),
-    this.checkAnswer = true,
+    this.resultRange = const RangeValues(1, 90000),
+    this.numberRange = const RangeValues(1, 300),
+    this.checkAnswer = false,
+    this.checkNumberRange = false,
     this.practicePercentage = 20,
     this.showBlocks = true,
     this.answerTimeSeconds = 15,
@@ -27,6 +29,7 @@ class SettingsModel {
       'resultRangeEnd': resultRange.end,
       'numberRangeStart': numberRange.start,
       'numberRangeEnd': numberRange.end,
+      'checkNumberRange': checkNumberRange,
       'checkAnswer': checkAnswer,
       'practicePercentage': practicePercentage,
       'showBlocks': showBlocks,
@@ -40,13 +43,14 @@ class SettingsModel {
       isMultiplication: json['isMultiplication'] ?? true,
       resultRange: RangeValues(
         json['resultRangeStart']?.toDouble() ?? 1,
-        json['resultRangeEnd']?.toDouble() ?? 90,
+        json['resultRangeEnd']?.toDouble() ?? 1000,
       ),
       numberRange: RangeValues(
         json['numberRangeStart']?.toDouble() ?? 1,
-        json['numberRangeEnd']?.toDouble() ?? 90,
+        json['numberRangeEnd']?.toDouble() ?? 300,
       ),
-      checkAnswer: json['checkAnswer'] ?? true,
+      checkAnswer: json['checkAnswer'] ?? false,
+      checkNumberRange: json['checkNumberRange'] ?? false,
       practicePercentage: json['practicePercentage']?.toDouble() ?? 20,
       showBlocks: json['showBlocks'] ?? true,
       answerTimeSeconds: json['answerTimeSeconds'] ?? 15,
@@ -62,11 +66,14 @@ class SettingsModel {
     double? practicePercentage,
     bool? showBlocks,
     int? answerTimeSeconds,
+    String? operator,
+    bool? checkNumberRange,
   }) {
     return SettingsModel(
       isMultiplication: isMultiplication ?? this.isMultiplication,
       resultRange: resultRange ?? this.resultRange,
       numberRange: numberRange ?? this.numberRange,
+      checkNumberRange: checkNumberRange ?? this.checkNumberRange,
       checkAnswer: checkAnswer ?? this.checkAnswer,
       practicePercentage: practicePercentage ?? this.practicePercentage,
       showBlocks: showBlocks ?? this.showBlocks,

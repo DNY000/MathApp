@@ -1,23 +1,49 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:math_app/screens/Practice/practice_screen.dart';
-import 'package:math_app/screens/ads/ads_screen.dart';
-import 'package:math_app/screens/calculator/calculator_screen.dart';
-import 'package:math_app/screens/change_language/change_language_screen.dart';
+import 'package:math_app/viewmodel/settings_provider.dart';
+import 'package:math_app/views/Practice/practice_screen.dart';
+import 'package:math_app/views/ads/ads_screen.dart';
+import 'package:math_app/views/calculator/calculator_screen.dart';
+import 'package:math_app/views/change_language/change_language_screen.dart';
 import 'package:math_app/common/widgets/button.dart';
 import 'package:math_app/common/widgets/circle_button.dart';
-import 'package:math_app/core/setting/settings.dart';
-import 'package:math_app/screens/test/test_screen.dart';
+import 'package:math_app/views/settings/settings.dart';
+import 'package:math_app/views/testing/test_screen.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/ultis/t_image.dart';
 import 'package:math_app/ultis/t_sizes.dart';
+import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 
 class Home extends StatelessWidget {
   const Home({super.key});
 
+  Future<void> shareApp(BuildContext context) async {
+    final scaffoldMessenger = ScaffoldMessenger.of(context);
+
+    try {
+      await Share.share(
+        'Ứng dụng Math tốt cho trẻ https://play.google.com/store/apps/details?id=vn.techlead.app.mathapp'
+            .tr(),
+        subject: 'Ứng dụng Math'.tr(),
+      );
+
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Chia sẻ thành công'.tr())),
+      );
+    } catch (e) {
+      scaffoldMessenger.showSnackBar(
+        SnackBar(content: Text('Lỗi chia sẻ ứng dụng:'.tr())),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final bool isMultiplication = settingsProvider.settings.isMultiplication;
+
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -82,62 +108,16 @@ class Home extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Container(
-                          height: 96.h,
-                          width: 96.h,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: TColors.innerGreen,
-                          ),
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'A x B',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                ),
-                              ),
-                              Text(
-                                '20%',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
+                        BuidlCircleButon(
+                          isSelected: isMultiplication,
+                          operation: 'A x B',
+                          percentage: '0%',
                         ),
                         SizedBox(width: 23.w),
-                        Container(
-                          height: 96.h,
-                          width: 96.h,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white,
-                          ),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  'A : B',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 22.sp,
-                                  ),
-                                ),
-                                Text(
-                                  '20%',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        BuidlCircleButon(
+                          isSelected: !isMultiplication,
+                          operation: 'A : B',
+                          percentage: '0%',
                         ),
                       ],
                     ),
@@ -221,7 +201,7 @@ class Home extends StatelessWidget {
                           height: 44,
                           width: 44,
                           image: TImage.chiase,
-                          onPressed: () {},
+                          onPressed: () => shareApp(context),
                         ),
                         Spacer(),
                         CircleButton(
@@ -239,6 +219,76 @@ class Home extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ignore: must_be_immutable
+class BuidlCircleButon extends StatelessWidget {
+  bool isSelected;
+  String operation;
+  String percentage;
+  BuidlCircleButon({
+    super.key,
+    required this.isSelected,
+    required this.operation,
+    required this.percentage,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    bool isMultiplication = settingsProvider.settings.isMultiplication;
+
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox(
+          height: 96.h,
+          width: 96.h,
+          child: CircularProgressIndicator(
+            value: double.parse(percentage.replaceAll('%', '')) / 100,
+            strokeWidth: 4,
+            backgroundColor: Colors.grey[200],
+            color:
+                isSelected
+                    ? TColors.innerGreen
+                    : const Color.fromARGB(255, 185, 182, 182),
+          ),
+        ),
+        GestureDetector(
+          onTap: () {
+            settingsProvider.updateMode(!isMultiplication);
+          },
+          child: Container(
+            height: 84.h,
+            width: 84.h,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isSelected ? TColors.innerGreen : Colors.white,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  operation,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontSize: 22.sp,
+                  ),
+                ),
+                Text(
+                  percentage,
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black,
+                    fontSize: 14.sp,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

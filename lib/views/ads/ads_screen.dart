@@ -119,14 +119,28 @@ class AdsScreen extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: 18.h),
           Padding(
             padding: EdgeInsets.symmetric(horizontal: 16.w),
             child: Container(
               height: 124.h,
               width: 343.w,
               decoration: BoxDecoration(
-                boxShadow: [],
-                border: Border.all(width: 1.5.w, color: TColors.borderbrown),
+                border: Border(
+                  left: BorderSide(
+                    width: 0.5.w,
+                    color: TColors.backgroundBrown,
+                  ),
+                  right: BorderSide(
+                    width: 0.5.w,
+                    color: TColors.backgroundBrown,
+                  ),
+                  top: BorderSide(width: 0.5.w, color: TColors.backgroundBrown),
+                  bottom: BorderSide(
+                    width: 3.5.w,
+                    color: TColors.backgroundBrown,
+                  ),
+                ),
                 borderRadius: BorderRadius.all(Radius.circular(16.r)),
               ),
               child: Column(
@@ -144,7 +158,7 @@ class AdsScreen extends StatelessWidget {
                     child: Row(
                       children: [
                         SizedBox(width: 24.w),
-                        Image.asset(TImage.video),
+                        Image.asset(TImage.video, color: TColors.borderbrown),
                         SizedBox(width: 12.w),
                         Text(
                           'Daily',
@@ -157,18 +171,33 @@ class AdsScreen extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Center(
-                    child: Text(
-                      'You watch an ad to disable all ads on one day',
-                      style: TextStyle(
-                        fontSize: 15.sp,
-                        fontWeight: FontWeight.w700,
-                        color: TColors.textBack,
+                  const Divider(color: TColors.backgroundBrown, thickness: 0.5),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'You watch an ad to disable all ads on one day',
+                        style: TextStyle(
+                          fontSize: 15.sp,
+                          fontWeight: FontWeight.w400,
+                          color: TColors.textBack,
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
+            ),
+          ),
+          SizedBox(height: 60.h),
+          SizedBox(
+            height: 60.h,
+            width: 300.w,
+            child: ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: TColors.backgroundBrown,
+              ),
+              onPressed: () {},
+              child: Text('Tiếp tục'),
             ),
           ),
         ],

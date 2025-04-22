@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/settings_model.dart';
-import '../../shared_preferences/shared_prefs.dart';
+import '../core/shared_preferences/shared_prefs.dart';
 
 class SettingsProvider extends ChangeNotifier {
   static const String _settingsKey = 'math_app_settings';
@@ -53,6 +53,12 @@ class SettingsProvider extends ChangeNotifier {
 
   void updateCheckAnswer(bool value) {
     _settings = _settings.copyWith(checkAnswer: value);
+    _saveSettings();
+    notifyListeners();
+  }
+
+  void updateCheckNumberRange(bool value) {
+    _settings = _settings.copyWith(checkNumberRange: value);
     _saveSettings();
     notifyListeners();
   }

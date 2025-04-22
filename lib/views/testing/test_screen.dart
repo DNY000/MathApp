@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
-import 'package:math_app/screens/test/testing_screen.dart';
+import 'package:math_app/views/testing/testing_screen.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/ultis/t_image.dart';
 
@@ -91,7 +91,16 @@ class TestScreen extends StatelessWidget {
 }
 
 class BanPhim extends StatelessWidget {
-  const BanPhim({super.key});
+  final Function(int) onNumberPress;
+  final VoidCallback onCancelPress;
+  final VoidCallback onCheckPress;
+
+  const BanPhim({
+    super.key,
+    required this.onNumberPress,
+    required this.onCancelPress,
+    required this.onCheckPress,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -101,20 +110,74 @@ class BanPhim extends StatelessWidget {
       child: Wrap(
         spacing: 33.w,
         runSpacing: 12.h,
-
         children: [
-          nutBam(number: 1, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 2, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 3, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 4, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 5, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 6, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 7, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 8, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 9, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 0, cancel: true, result: false, onPress: () {}),
-          nutBam(number: 0, cancel: false, result: false, onPress: () {}),
-          nutBam(number: 0, cancel: false, result: true, onPress: () {}),
+          nutBam(
+            number: 1,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(1),
+          ),
+          nutBam(
+            number: 2,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(2),
+          ),
+          nutBam(
+            number: 3,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(3),
+          ),
+          nutBam(
+            number: 4,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(4),
+          ),
+          nutBam(
+            number: 5,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(5),
+          ),
+          nutBam(
+            number: 6,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(6),
+          ),
+          nutBam(
+            number: 7,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(7),
+          ),
+          nutBam(
+            number: 8,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(8),
+          ),
+          nutBam(
+            number: 9,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(9),
+          ),
+          nutBam(
+            number: 0,
+            cancel: true,
+            result: false,
+            onPress: onCancelPress,
+          ),
+          nutBam(
+            number: 0,
+            cancel: false,
+            result: false,
+            onPress: () => onNumberPress(0),
+          ),
+          nutBam(number: 0, cancel: false, result: true, onPress: onCheckPress),
         ],
       ),
     );

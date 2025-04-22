@@ -1,11 +1,12 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
-import 'package:math_app/core/setting/widget/container_setting.dart';
+import 'package:math_app/views/settings/container_setting.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:provider/provider.dart';
-import 'providers/settings_provider.dart';
+import '../../viewmodel/settings_provider.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -14,7 +15,7 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDF3),
-      appBar: TAppbar(name: 'Cài đặt', showBack: true),
+      appBar: TAppbar(name: 'Cài đặt'.tr(), showBack: true),
       body: Consumer<SettingsProvider>(
         builder: (context, settingsProvider, child) {
           final settings = settingsProvider.settings;
@@ -34,7 +35,7 @@ class SettingsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          'Chế độ',
+                          'Chế độ'.tr(),
                           style: TextStyle(
                             fontSize: 16.sp,
                             fontWeight: FontWeight.w500,
@@ -69,7 +70,7 @@ class SettingsScreen extends StatelessWidget {
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: Text(
-                              'Khoảng kết quả',
+                              'Khoảng kết quả'.tr(),
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w500,
@@ -82,14 +83,15 @@ class SettingsScreen extends StatelessWidget {
 
                           children: [
                             _customCheckbox(
-                              settings.checkAnswer,
+                              settings.checkNumberRange,
                               onChanged:
-                                  (value) =>
-                                      settingsProvider.updateCheckAnswer(value),
+                                  (value) => settingsProvider
+                                      .updateCheckNumberRange(value),
                             ),
-                            Text('Từ', style: TextStyle(fontSize: 14.sp)),
+                            Text('Từ'.tr(), style: TextStyle(fontSize: 14.sp)),
                             SizedBox(width: 25.w),
                             _inputBox(
+                              enable: settings.checkNumberRange,
                               settings.resultRange.start.toInt().toString(),
                               onChanged: (value) {
                                 final start = int.tryParse(value) ?? 1;
@@ -102,9 +104,10 @@ class SettingsScreen extends StatelessWidget {
                               },
                             ),
                             SizedBox(width: 17.w),
-                            Text('đến', style: TextStyle(fontSize: 14.sp)),
+                            Text('Đến'.tr(), style: TextStyle(fontSize: 14.sp)),
                             SizedBox(width: 11.w),
                             _inputBox(
+                              enable: settings.checkNumberRange,
                               settings.resultRange.end.toInt().toString(),
                               onChanged: (value) {
                                 final end = int.tryParse(value) ?? 90;
@@ -134,7 +137,7 @@ class SettingsScreen extends StatelessWidget {
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: Text(
-                              'Khoảng số',
+                              'Khoảng số'.tr(),
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w500,
@@ -145,7 +148,7 @@ class SettingsScreen extends StatelessWidget {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Text('Từ', style: TextStyle(fontSize: 14.sp)),
+                            Text('Từ'.tr(), style: TextStyle(fontSize: 14.sp)),
                             SizedBox(width: 11.w),
                             _inputBox(
                               settings.numberRange.start.toInt().toString(),
@@ -160,7 +163,7 @@ class SettingsScreen extends StatelessWidget {
                               },
                             ),
                             SizedBox(width: 17.w),
-                            Text('đến', style: TextStyle(fontSize: 14.sp)),
+                            Text('đến'.tr(), style: TextStyle(fontSize: 14.sp)),
                             SizedBox(width: 11.w),
                             _inputBox(
                               settings.numberRange.end.toInt().toString(),
@@ -192,7 +195,7 @@ class SettingsScreen extends StatelessWidget {
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: Text(
-                              'Gõ câu trả lời',
+                              'Gõ câu trả lời'.tr(),
                               style: TextStyle(
                                 fontSize: 16.sp,
                                 fontWeight: FontWeight.w500,
@@ -209,22 +212,27 @@ class SettingsScreen extends StatelessWidget {
                                   (value) =>
                                       settingsProvider.updateCheckAnswer(value),
                             ),
-                            Text('Kiểm tra', style: TextStyle(fontSize: 14.sp)),
+                            Text(
+                              'Kiểm tra'.tr(),
+                              style: TextStyle(fontSize: 14.sp),
+                            ),
                             SizedBox(width: 21.w),
                             Text(
-                              'Bắt đầu từ ',
+                              'Bắt đầu từ'.tr(),
                               style: TextStyle(fontSize: 14.sp),
                             ),
                             SizedBox(width: 8.w),
-                            _inputBox(
-                              settings.practicePercentage.toInt().toString(),
-                              suffix: '%',
-                              onChanged: (value) {
-                                final percentage = double.tryParse(value) ?? 20;
-                                settingsProvider.updatePracticePercentage(
-                                  percentage,
-                                );
-                              },
+
+                            Container(
+                              width: 86.w,
+                              height: 40.h,
+                              padding: EdgeInsets.symmetric(horizontal: 8.w),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(12.r),
+                                border: Border.all(color: TColors.borderbrown),
+                              ),
+                              child: Center(child: Text('20 %')),
                             ),
                           ],
                         ),
@@ -243,7 +251,7 @@ class SettingsScreen extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              'Hiện khối trong khi học tập:',
+                              'Hiện khối trong khi học tập:'.tr(),
                               style: TextStyle(fontSize: 14.sp),
                             ),
                             const Spacer(),
@@ -259,7 +267,7 @@ class SettingsScreen extends StatelessWidget {
                         Row(
                           children: [
                             Text(
-                              'Thời gian trả lời (kiểm tra):',
+                              'Thời gian trả lời (kiểm tra):'.tr(),
                               style: TextStyle(fontSize: 14.sp),
                             ),
                             SizedBox(width: 8.w),
@@ -271,7 +279,10 @@ class SettingsScreen extends StatelessWidget {
                               },
                             ),
                             SizedBox(width: 8.w),
-                            Text('Giây', style: TextStyle(fontSize: 14.sp)),
+                            Text(
+                              'Giây'.tr(),
+                              style: TextStyle(fontSize: 14.sp),
+                            ),
                           ],
                         ),
                       ],
@@ -286,10 +297,14 @@ class SettingsScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: TextButton.icon(
-                          onPressed: () => settingsProvider.resetSettings(),
+                          onPressed:
+                              () => showAlertDialog(context, () {
+                                settingsProvider.resetSettings();
+                                Navigator.pop(context);
+                              }),
                           icon: const Icon(Icons.delete, color: Colors.black),
                           label: Text(
-                            'Xóa tiến trình',
+                            'Xóa tiến trình'.tr(),
                             style: TextStyle(
                               color: Colors.black,
                               fontSize: 14.sp,
@@ -299,9 +314,13 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       const Spacer(),
                       TextButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('Bạn đã bấm vào đây')),
+                          );
+                        },
                         child: Text(
-                          'Chính sách bảo mật',
+                          'Chính sách bảo mật'.tr(),
                           style: TextStyle(
                             decoration: TextDecoration.underline,
                             color: Colors.black,
@@ -317,6 +336,90 @@ class SettingsScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+
+  void showAlertDialog(BuildContext context, VoidCallback onPressed) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: TColors.yellow2,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 16.w,
+            vertical: 24.h,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(16)),
+            side: BorderSide(
+              color: TColors.button,
+              strokeAlign: BorderSide.strokeAlignInside,
+            ),
+          ),
+          title: Text(
+            'Bạn có chắc chắn muốn xóa dữ liệu học tập của bạn?',
+            style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w400),
+            maxLines: 2,
+          ),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).pop(); // Đóng dialog
+                  },
+                  child: Container(
+                    height: 56.h,
+                    width: 125.w,
+                    decoration: BoxDecoration(
+                      color: TColors.yellow1,
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                      border: Border.all(
+                        color: TColors.borderbrown,
+                        width: 0.5.w,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Hủy bỏ',
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: onPressed,
+                  child: Container(
+                    height: 56.h,
+                    width: 130.w,
+                    decoration: BoxDecoration(
+                      color: TColors.backgroundBrown,
+                      borderRadius: BorderRadius.all(Radius.circular(16)),
+                      border: Border.all(
+                        color: TColors.borderbrown,
+                        width: 0.5.w,
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        'Được chứ',
+                        style: TextStyle(
+                          fontSize: 18.sp,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -365,6 +468,7 @@ class SettingsScreen extends StatelessWidget {
     String value, {
     String? suffix,
     ValueChanged<String>? onChanged,
+    bool? enable,
   }) {
     return Container(
       width: 86.w,
@@ -377,6 +481,7 @@ class SettingsScreen extends StatelessWidget {
       ),
       child: Center(
         child: TextFormField(
+          enabled: enable,
           initialValue: value,
           textAlign: TextAlign.center,
           keyboardType: TextInputType.numberWithOptions(

@@ -1,117 +1,182 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Lớp quản lý SharedPreferences với Singleton pattern
 class SharedPrefs {
+  // Singleton instance
   static SharedPrefs? _instance;
   static SharedPreferences? _prefs;
 
+  // Cache để tối ưu performance
+  final Map<String, dynamic> _cache = {};
+
+  // Private constructor
   SharedPrefs._();
 
-  static SharedPrefs get instance {
-    _instance ??= SharedPrefs._();
+  /// Khởi tạo SharedPreferences
+  static Future<SharedPrefs> initialize() async {
+    if (_instance == null) {
+      _instance = SharedPrefs._();
+      _prefs = await SharedPreferences.getInstance();
+    }
     return _instance!;
   }
 
-  // Initialize SharedPreferences
-  static Future<void> init() async {
-    _prefs = await SharedPreferences.getInstance();
+  /// Getter để truy cập instance
+  static SharedPrefs get instance {
+    if (_instance == null) {
+      throw StateError(
+        'SharedPrefs chưa được khởi tạo. Hãy gọi initialize() trước.',
+      );
+    }
+    return _instance!;
   }
 
-  Future<bool> saveData<T>(String key, T value) async {
-    if (_prefs == null) return false;
+  /// Lưu dữ liệu với kiểu generic
+  Future<bool> save<T>(String key, T value) async {
+    try {
+      // Cập nhật cache
+      _cache[key] = value;
 
-    switch (T) {
-      case String:
-        return await _prefs!.setString(key, value as String);
-      case int:
-        return await _prefs!.setInt(key, value as int);
-      case double:
-        return await _prefs!.setDouble(key, value as double);
-      case bool:
-        return await _prefs!.setBool(key, value as bool);
-      case const (List<String>):
-        return await _prefs!.setStringList(key, value as List<String>);
-      default:
-        // For complex objects, convert to JSON string
-        if (value != null) {
-          return await _prefs!.setString(key, json.encode(value));
-        }
-        return false;
+      // Lưu xuống SharedPreferences
+      if (_prefs == null) return false;
+
+      switch (T) {
+        case Type _ when T == String:
+          return await _prefs!.setString(key, value as String);
+        case Type _ when T == int:
+          return await _prefs!.setInt(key, value as int);
+        case Type _ when T == double:
+          return await _prefs!.setDouble(key, value as double);
+        case Type _ when T == bool:
+          return await _prefs!.setBool(key, value as bool);
+        case Type _ when T == List<String>:
+          return await _prefs!.setStringList(key, value as List<String>);
+        default:
+          if (value != null) {
+            final String jsonString = json.encode(value);
+            return await _prefs!.setString(key, jsonString);
+          }
+          return false;
+      }
+    } catch (e) {
+      _cache.remove(key); // Xóa khỏi cache nếu lưu thất bại
+      return false;
     }
   }
 
-  // Generic method to get data
-  T? getData<T>(String key) {
-    if (_prefs == null) return null;
+  /// Lấy dữ liệu với kiểu generic
+  T? get<T>(String key) {
+    try {
+      // Kiểm tra cache trước
+      if (_cache.containsKey(key)) {
+        final value = _cache[key];
+        if (value is T) return value;
+      }
 
-    switch (T) {
-      case String:
-        return _prefs!.getString(key) as T?;
-      case int:
-        return _prefs!.getInt(key) as T?;
-      case double:
-        return _prefs!.getDouble(key) as T?;
-      case bool:
-        return _prefs!.getBool(key) as T?;
-      case const (List<String>):
-        return _prefs!.getStringList(key) as T?;
-      default:
-        // For complex objects, decode from JSON string
-        final String? jsonString = _prefs!.getString(key);
-        if (jsonString != null) {
-          return json.decode(jsonString) as T?;
-        }
-        return null;
+      // Nếu không có trong cache, lấy từ SharedPreferences
+      if (_prefs == null) return null;
+
+      switch (T) {
+        case Type _ when T == String:
+          final value = _prefs!.getString(key);
+          if (value != null) _cache[key] = value;
+          return value as T?;
+        case Type _ when T == int:
+          final value = _prefs!.getInt(key);
+          if (value != null) _cache[key] = value;
+          return value as T?;
+        case Type _ when T == double:
+          final value = _prefs!.getDouble(key);
+          if (value != null) _cache[key] = value;
+          return value as T?;
+        case Type _ when T == bool:
+          final value = _prefs!.getBool(key);
+          if (value != null) _cache[key] = value;
+          return value as T?;
+        case Type _ when T == List<String>:
+          final value = _prefs!.getStringList(key);
+          if (value != null) _cache[key] = value;
+          return value as T?;
+        default:
+          final jsonString = _prefs!.getString(key);
+          if (jsonString != null) {
+            final value = json.decode(jsonString);
+            _cache[key] = value;
+            return value as T?;
+          }
+          return null;
+      }
+    } catch (e) {
+      _cache.remove(key); // Xóa khỏi cache nếu có lỗi
+      return null;
     }
   }
 
-  // Generic method to save object
+  /// Lưu object với fromJson function
   Future<bool> saveObject<T>(
     String key,
     T value,
     T Function(Map<String, dynamic>) fromJson,
   ) async {
-    if (_prefs == null) return false;
-
     try {
       final String jsonString = json.encode(value);
-      return await _prefs!.setString(key, jsonString);
+      _cache[key] = value; // Cập nhật cache
+      return await _prefs?.setString(key, jsonString) ?? false;
     } catch (e) {
+      _cache.remove(key);
       return false;
     }
   }
 
-  // Generic method to get object
+  /// Lấy object với fromJson function
   T? getObject<T>(String key, T Function(Map<String, dynamic>) fromJson) {
-    if (_prefs == null) return null;
-
     try {
-      final String? jsonString = _prefs!.getString(key);
+      // Kiểm tra cache trước
+      if (_cache.containsKey(key)) {
+        final value = _cache[key];
+        if (value is T) return value;
+      }
+
+      // Nếu không có trong cache, lấy từ SharedPreferences
+      final jsonString = _prefs?.getString(key);
       if (jsonString != null) {
         final Map<String, dynamic> jsonMap = json.decode(jsonString);
-        return fromJson(jsonMap);
+        final value = fromJson(jsonMap);
+        _cache[key] = value; // Cập nhật cache
+        return value;
       }
     } catch (e) {
-      return null;
+      _cache.remove(key);
     }
     return null;
   }
 
-  // Remove data
-  Future<bool> removeData(String key) async {
-    if (_prefs == null) return false;
-    return await _prefs!.remove(key);
+  /// Xóa dữ liệu theo key
+  Future<bool> remove(String key) async {
+    _cache.remove(key); // Xóa khỏi cache
+    return await _prefs?.remove(key) ?? false;
   }
 
-  // Clear all data
-  Future<bool> clearAll() async {
-    if (_prefs == null) return false;
-    return await _prefs!.clear();
+  /// Xóa tất cả dữ liệu
+  Future<bool> clear() async {
+    _cache.clear(); // Xóa cache
+    return await _prefs?.clear() ?? false;
   }
 
-  // Check if key exists
+  /// Kiểm tra key tồn tại
   bool hasKey(String key) {
-    if (_prefs == null) return false;
-    return _prefs!.containsKey(key);
+    return _prefs?.containsKey(key) ?? false;
+  }
+
+  /// Lấy tất cả keys
+  Set<String> getKeys() {
+    return _prefs?.getKeys() ?? {};
+  }
+
+  /// Reload dữ liệu từ disk
+  Future<void> reload() async {
+    await _prefs?.reload();
+    _cache.clear(); // Xóa cache để load lại data mới
   }
 }
