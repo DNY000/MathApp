@@ -8,11 +8,24 @@ import 'package:math_app/ultis/colors.dart';
 import 'package:provider/provider.dart';
 import '../../viewmodel/settings_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
+
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  void dispose() {
+    // Không gọi Provider trong dispose() để tránh lỗi
+    // Thay vào đó, sẽ tự động cập nhật khi mở màn hình luyện tập
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    // ignore: deprecated_member_use
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDF3),
       appBar: TAppbar(name: 'Cài đặt'.tr(), showBack: true),

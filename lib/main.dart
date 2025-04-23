@@ -7,6 +7,7 @@ import 'package:math_app/splash.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/viewmodel/division_provider.dart';
 import 'package:math_app/viewmodel/multiplication_provider.dart';
+
 import 'package:provider/provider.dart';
 import 'viewmodel/settings_provider.dart';
 
@@ -24,11 +25,14 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => settingsProvider),
-        ChangeNotifierProvider(create: (_) => DivisionProvider()),
+        ChangeNotifierProvider(
+          create: (_) => DivisionProvider(settingsProvider: settingsProvider),
+        ),
         ChangeNotifierProvider(
           create:
               (_) => MultiplicationProvider(settingsProvider: settingsProvider),
         ),
+        ChangeNotifierProvider(create: (_) => AnswerRecordProvider()),
       ],
       child: EasyLocalization(
         supportedLocales: const [
