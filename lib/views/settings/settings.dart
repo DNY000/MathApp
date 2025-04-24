@@ -306,7 +306,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: TColors.backgroundBrown,
+                          color: TColors.yellow2,
                           borderRadius: BorderRadius.circular(12.r),
                         ),
                         child: TextButton.icon(

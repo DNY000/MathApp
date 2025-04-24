@@ -2,6 +2,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:math_app/viewmodel/multiplication_provider.dart';
 import 'package:provider/provider.dart';
 
 import 'package:math_app/common/widgets/t_appbar.dart';
@@ -21,6 +22,8 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
   @override
   Widget build(BuildContext context) {
     Provider.of<SettingsProvider>(context);
+    final mul = Provider.of<MultiplicationProvider>(context);
+
     return Scaffold(
       backgroundColor: TColors.yellow1,
       appBar: TAppbar(name: 'Bảng Tính'.tr(), showBack: true),
@@ -34,6 +37,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
               onNumberSelected: (number) {
                 setState(() {
                   selectedNumber = number;
+                  mul.dsnumber(number, mul.multiplications);
                 });
               },
               selectedNumber: selectedNumber,
@@ -197,7 +201,7 @@ class CalculatorRow extends StatelessWidget {
 
     return Column(
       children: [
-        CustomRatingBar(count: 2),
+        CustomRatingBar(count: 0),
         SizedBox(height: 6.h),
         SizedBox(
           height: 21.h,

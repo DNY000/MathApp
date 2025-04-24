@@ -94,7 +94,11 @@ class Manhinhnhap extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CustomRatingBar(),
+            Selector<MultiplicationProvider, int>(
+              builder: (context, value, child) => CustomRatingBar(count: value),
+              selector: (p0, p1) => p1.currentMultiplication!.star,
+            ),
+
             SizedBox(height: 30.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -116,10 +120,11 @@ class Manhinhnhap extends StatelessWidget {
                     ),
                 Container(
                   height: 40.h,
-                  width: 86.w,
+                  width: 40.w,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(color: TColors.borderbrown),
                   ),
                   child: Center(
                     child: Text(
@@ -127,6 +132,7 @@ class Manhinhnhap extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 24.sp,
                         fontWeight: FontWeight.w600,
+                        color: TColors.borderbrown,
                       ),
                     ),
                   ),
@@ -167,7 +173,7 @@ class ContainerPractice<T> extends StatelessWidget {
       ),
       child:
           isMultiplication
-              ? secondNumber > 10 || firstNumber > 10
+              ? secondNumber > 9 || firstNumber > 9
                   ? Center(
                     child: Text(
                       'Bảng cửu chương',
@@ -355,6 +361,16 @@ class _ChonKetquaState extends State<ChonKetqua> {
       if (!mounted) return;
 
       if (multiplicationProvider.isPracticeComplete) {
+        final settings = Provider.of<SettingsProvider>(context, listen: false);
+        settings.updateProcessing(
+          true,
+          (multiplicationProvider.sumStar(
+                multiplicationProvider.multiplications,
+              ) ~/
+              144 *
+              100),
+        );
+
         Navigator.of(context).push(
           MaterialPageRoute(
             builder:
@@ -405,17 +421,36 @@ class _ChonKetquaState extends State<ChonKetqua> {
                   final bool isCorrect =
                       answer == widget.currentMultiplication?.result;
 
-                  Color backgroundColor = Colors.white;
+                  Color backgroundColor = TColors.yellow2;
                   if (isSelected) {
                     backgroundColor = isCorrect ? Colors.green : Colors.red;
                   }
 
                   return GestureDetector(
-                    onTap:
-                        (!isWrong && !isProcessing)
-                            ? () => _handleAnswerSelection(answer)
-                            : null,
-                    child: Container(
+                    onTapDown: (_) {
+                      if (!isWrong && !isProcessing) {
+                        setState(() => selectedAnswer = answer); // bắt đầu nhấn
+                      }
+                    },
+                    onTapUp: (_) {
+                      if (!isWrong && !isProcessing) {
+                        _handleAnswerSelection(answer); // xử lý chọn
+                      }
+                    },
+                    onTapCancel: () {
+                      if (!isWrong && !isProcessing) {
+                        setState(
+                          () => selectedAnswer = null,
+                        ); // nếu nhả ra ngoài
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 100),
+                      curve: Curves.easeInOut,
+                      transform:
+                          selectedAnswer == answer
+                              ? Matrix4.translationValues(0, 2, 0)
+                              : Matrix4.identity(),
                       decoration: BoxDecoration(
                         color: backgroundColor,
                         borderRadius: BorderRadius.circular(12.r),
@@ -423,6 +458,16 @@ class _ChonKetquaState extends State<ChonKetqua> {
                           color: TColors.borderbrown,
                           width: 2,
                         ),
+                        boxShadow:
+                            selectedAnswer == answer
+                                ? [] // không shadow khi nhấn
+                                : [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
                       ),
                       child: Center(
                         child: Text(

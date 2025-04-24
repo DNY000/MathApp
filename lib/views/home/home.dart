@@ -43,7 +43,8 @@ class Home extends StatelessWidget {
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final bool isMultiplication = settingsProvider.settings.isMultiplication;
-
+    final int processingMul = settingsProvider.settings.processingMul;
+    final int processingDivison = settingsProvider.settings.processingDivison;
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -111,13 +112,13 @@ class Home extends StatelessWidget {
                         BuidlCircleButon(
                           isSelected: isMultiplication,
                           operation: 'A x B',
-                          percentage: '0%',
+                          percentage: '$processingMul%',
                         ),
                         SizedBox(width: 23.w),
                         BuidlCircleButon(
                           isSelected: !isMultiplication,
                           operation: 'A : B',
-                          percentage: '0%',
+                          percentage: '$processingDivison%',
                         ),
                       ],
                     ),

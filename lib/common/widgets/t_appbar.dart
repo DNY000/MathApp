@@ -25,6 +25,7 @@ class TAppbar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
+      actionsPadding: EdgeInsets.symmetric(horizontal: 8.h),
       title: Text(
         name,
         style: TextStyle(fontSize: 18.sp, color: TColors.textBack),
@@ -53,7 +54,10 @@ class TAppbar extends StatelessWidget implements PreferredSizeWidget {
               : null,
       actions: [
         if (showAction)
-          Text(actionText ?? '', style: TextStyle(fontSize: 18.sp)),
+          Text(
+            actionText ?? '',
+            style: TextStyle(fontSize: 18.sp, color: TColors.borderbrown),
+          ),
       ],
     );
   }

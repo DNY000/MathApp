@@ -1,55 +1,62 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/ultis/colors.dart';
 
 class CountdownProgress extends StatefulWidget {
   final int durationInSeconds;
-  final Function()? onComplete;
+  final VoidCallback onComplete;
   final double height;
 
   const CountdownProgress({
     super.key,
     required this.durationInSeconds,
-    this.onComplete,
-    this.height = 4,
+    required this.onComplete,
+    required this.height,
   });
 
   @override
-  State<CountdownProgress> createState() => _CountdownProgressState();
+  State<CountdownProgress> createState() => CountdownProgressState();
 }
 
-class _CountdownProgressState extends State<CountdownProgress> {
+class CountdownProgressState extends State<CountdownProgress> {
   late Timer _timer;
-  late int _remainingSeconds;
-  late double _progress;
+  double _timeLeft = 0;
+  bool _isRunning = false;
 
   @override
   void initState() {
     super.initState();
-    _remainingSeconds = widget.durationInSeconds;
-    _progress = 1.0;
-    _startTimer();
+    _timeLeft = widget.durationInSeconds.toDouble();
+    startTimer();
   }
 
-  void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        if (_remainingSeconds > 0) {
-          _remainingSeconds--;
-          _progress = _remainingSeconds / widget.durationInSeconds;
-        } else {
-          _timer.cancel();
-          widget.onComplete?.call();
-        }
-      });
+  void startTimer() {
+    if (_isRunning) return;
+
+    _isRunning = true;
+    _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      if (_timeLeft > 0) {
+        setState(() {
+          _timeLeft -= 0.1;
+        });
+      } else {
+        stopTimer();
+        widget.onComplete();
+      }
     });
   }
 
-  @override
-  void dispose() {
+  void stopTimer() {
     _timer.cancel();
-    super.dispose();
+    _isRunning = false;
+  }
+
+  void resetTimer() {
+    stopTimer();
+    setState(() {
+      _timeLeft = widget.durationInSeconds.toDouble();
+    });
+    startTimer();
   }
 
   @override
@@ -57,13 +64,13 @@ class _CountdownProgressState extends State<CountdownProgress> {
     return Column(
       children: [
         LinearProgressIndicator(
-          value: _progress,
-          minHeight: widget.height.h,
+          // Sử dụng timeLeft/duration để có được progress mượt
+          value: _timeLeft / widget.durationInSeconds,
           backgroundColor: TColors.button,
-          valueColor: AlwaysStoppedAnimation<Color>(
-            _progress > 0.5 ? TColors.yellow1 : Colors.red,
-          ),
+          valueColor: AlwaysStoppedAnimation<Color>(TColors.yellow1),
+          minHeight: widget.height,
         ),
+        SizedBox(height: 4),
       ],
     );
   }

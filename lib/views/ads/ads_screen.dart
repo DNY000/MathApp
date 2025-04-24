@@ -12,11 +12,11 @@ class AdsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TAppbar(
-        name: "Remove ads",
+        name: "Loại bỏ quảng cáo",
         showBack: true,
         showProcess: false,
         showAction: true,
-        actionText: 'Action',
+        actionText: 'khôi phục',
       ),
       body: Column(
         children: [
@@ -200,13 +200,23 @@ class AdsScreen extends StatelessWidget {
           SizedBox(height: 60.h),
           SizedBox(
             height: 60.h,
-            width: 300.w,
+            width: 343.w,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: TColors.backgroundBrown,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(8)),
+                ),
               ),
               onPressed: () {},
-              child: Text('Tiếp tục'),
+              child: Text(
+                'Tiếp tục',
+                style: TextStyle(
+                  fontSize: 18.sp,
+                  color: TColors.textBack,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
             ),
           ),
         ],

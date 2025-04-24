@@ -2,13 +2,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
 import 'package:math_app/ultis/colors.dart';
+import 'package:math_app/viewmodel/division_provider.dart';
+import 'package:math_app/viewmodel/multiplication_provider.dart';
+import 'package:math_app/viewmodel/settings_provider.dart';
 import 'package:math_app/views/Practice/answer_list.dart';
+import 'package:math_app/views/testing/answer_list_testing.dart';
+import 'package:provider/provider.dart';
 
 class CompleteScreen extends StatelessWidget {
   final int correctAnswers;
   final int wrongAnswers;
   final int totalQuestions;
   final int stars;
+  final bool isTesting;
+  final List<AnswerRecord>? answerHistory;
 
   const CompleteScreen({
     super.key,
@@ -16,12 +23,19 @@ class CompleteScreen extends StatelessWidget {
     required this.wrongAnswers,
     this.totalQuestions = 10,
     this.stars = 0,
+    this.answerHistory,
+    this.isTesting = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final double progressPercentage =
-        (correctAnswers / (correctAnswers + wrongAnswers)) * 100;
+    final settingsProvider = Provider.of<SettingsProvider>(
+      context,
+      listen: false,
+    );
+    final isMul = settingsProvider.settings.isMultiplication;
+    final mul = Provider.of<MultiplicationProvider>(context);
+    final int process = isTesting ? 0 : mul.sumStar(mul.multiplications);
 
     return Scaffold(
       appBar: TAppbar(name: 'Kết quả', showBack: false),
@@ -30,29 +44,46 @@ class CompleteScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 24.h),
-            Text(
-              'Tiến trình học\ntập của bạn',
-              style: TextStyle(
-                fontSize: 20.sp,
-                color: const Color(0xFF8B4513),
-                fontWeight: FontWeight.w500,
+            if (!isTesting) ...[
+              SizedBox(height: 24.h),
+              Transform.rotate(
+                angle: 7.26 * 3.14159 / 180,
+                child: Text(
+                  'Tiến trình học\ntập của bạn',
+                  style: TextStyle(
+                    fontSize: 15.sp,
+                    color: const Color(0xFF8B4513),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-            ),
-            SizedBox(height: 16.h),
-            Container(
-              width: double.infinity,
-              height: 48.h,
-              decoration: BoxDecoration(
-                color: const Color(0xFFFFF3E0),
-                borderRadius: BorderRadius.circular(24.r),
+              Padding(
+                padding: EdgeInsets.only(left: 113.w),
+                child: SizedBox(
+                  height: 15.5.h,
+                  width: 7.58.w,
+                  child: Image.asset(
+                    'assets/images/icons/muiten.png',
+                    fit: BoxFit.cover,
+                  ),
+                ),
               ),
-              alignment: Alignment.center,
-              child: Text(
-                '${progressPercentage.toStringAsFixed(0)}%',
-                style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w600),
+              SizedBox(height: 7.5.h),
+              Container(
+                width: 343.w,
+                height: 40.h,
+                alignment: Alignment.center,
+                child: LinearProgressIndicator(
+                  backgroundColor: TColors.yellow,
+                  borderRadius: BorderRadius.all(Radius.circular(12.r)),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    TColors.borderbrown,
+                  ),
+                  value: isMul ? process / 144 : 0.0,
+                ),
               ),
-            ),
+            ],
+
             SizedBox(height: 32.h),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -66,34 +97,47 @@ class CompleteScreen extends StatelessWidget {
               ],
             ),
             SizedBox(height: 32.h),
-            // Display stars
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: List.generate(3, (index) {
-                return Icon(
-                  index < stars ? Icons.star : Icons.star_border,
-                  color: Colors.amber,
-                  size: 40.w,
-                );
-              }),
-            ),
-            SizedBox(height: 32.h),
+
             _buildActionButton(
               'Danh sách câu hỏi',
               Icons.list_alt,
-              onTap:
-                  () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const AnswerList()),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) =>
+                            isTesting && answerHistory != null
+                                ? AnswerListTesting(list: answerHistory!)
+                                : const AnswerList(),
                   ),
+                );
+              },
             ),
+
             SizedBox(height: 16.h),
             _buildActionButton(
               'Chơi lại',
               Icons.refresh,
-              onTap: () {},
+              onTap: () {
+                if (!isTesting) {
+                  if (isMul) {
+                    Provider.of<MultiplicationProvider>(
+                      context,
+                      listen: false,
+                    ).retryCorrectAnswers();
+                  } else {
+                    Provider.of<DivisionProvider>(
+                      context,
+                      listen: false,
+                    ).retryCorrectAnswers();
+                  }
+                }
+                Navigator.pop(context);
+              },
               backgroundColor: TColors.backgroundBrown,
             ),
+
             SizedBox(height: 16.h),
             _buildActionButton(
               'Menu',

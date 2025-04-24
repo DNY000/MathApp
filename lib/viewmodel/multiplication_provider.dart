@@ -8,6 +8,7 @@ import 'dart:math';
 
 class MultiplicationProvider with ChangeNotifier {
   List<Multiplication> _multiplications = [];
+  List<Multiplication> listByNumber = [];
   Multiplication? _currentMultiplication;
   final SettingsProvider settingsProvider;
   SettingsModel _currentSettings;
@@ -25,7 +26,6 @@ class MultiplicationProvider with ChangeNotifier {
   int get currentPracticeIndex => _currentPracticeIndex;
   bool get isPracticeComplete => _correctAnswersCount >= PRACTICE_SET_SIZE;
   Multiplication? get currentMultiplication => _currentMultiplication;
-  //
   List<AnswerRecord> get answerHistory => _answerHistory;
   List<AnswerRecord> get currentSessionAnswers => _currentSessionAnswers;
   int get correctAnswersCount => _correctAnswersCount;
@@ -39,6 +39,28 @@ class MultiplicationProvider with ChangeNotifier {
   }
 
   List<Multiplication> get multiplications => _multiplications;
+
+  void setMultiplications(List<Multiplication> multiplications) {
+    _multiplications = multiplications;
+    notifyListeners();
+  }
+
+  // lay danh sách các phép tính cố số thứ nhất bằng 2 và số thứ 2 nhỏ hơn hoặc bằng 11
+  // dk nữa là số sao lơn hơn 1()
+  void dsnumber(int number, List<Multiplication> ds) {
+    int n = sumStar(multiplications);
+    print('sô soa là $n');
+    listByNumber =
+        ds
+            .where(
+              (element) =>
+                  element.number1 == 1 &&
+                  element.number2 <= 11 &&
+                  element.star > 0,
+            )
+            .toList();
+    print(listByNumber.toString());
+  }
 
   // Reset practice session
   void resetPractice() {
@@ -56,6 +78,8 @@ class MultiplicationProvider with ChangeNotifier {
     if (_multiplications.isEmpty) {
       generateMultipleQuestions(100);
     }
+
+    // Randomly select questions based on settings
     final random = Random();
     final availableIndices = List.generate(_multiplications.length, (i) => i);
 
@@ -74,7 +98,7 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // load danh sách câu hỏi
+  // Load multiplications from SharedPreferences
   Future<void> _loadMultiplications() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -98,6 +122,7 @@ class MultiplicationProvider with ChangeNotifier {
           savedNumberStart != currentNumberStart ||
           savedNumberEnd != currentNumberEnd;
 
+      // Tải danh sách trong Future để không chặn UI
       await Future(() async {
         // Nếu cài đặt đã thay đổi, tạo lại danh sách
         if (settingsChanged) {
@@ -110,6 +135,7 @@ class MultiplicationProvider with ChangeNotifier {
           // Tạo mới danh sách
           await _generateMultipleQuestionsAsync(100);
         } else {
+          // Nếu cài đặt không thay đổi, đọc danh sách từ SharedPreferences
           List<String>? encodedMultiplications = prefs.getStringList(
             'multiplications',
           );
@@ -134,10 +160,11 @@ class MultiplicationProvider with ChangeNotifier {
     }
   }
 
-  //  tạo danh sách câu hỏi
+  // Generate multiple questions
   void generateMultipleQuestions(int count) {
     final random = Random();
 
+    // Use current settings
     final resultStart = _currentSettings.resultRange.start.toInt();
     final resultEnd = _currentSettings.resultRange.end.toInt();
     final numberStart = _currentSettings.numberRange.start.toInt();
@@ -149,10 +176,14 @@ class MultiplicationProvider with ChangeNotifier {
 
     while (_multiplications.length < count && attempts < maxAttempts) {
       attempts++;
+
+      // Generate numbers within current number range
       int number1 = numberStart + random.nextInt(numberEnd - numberStart + 1);
       int number2 = numberStart + random.nextInt(numberEnd - numberStart + 1);
 
       int result = number1 * number2;
+
+      // Verify result is within current result range
       if (result >= resultStart && result <= resultEnd) {
         Multiplication multiplication = Multiplication(
           number1: number1,
@@ -171,7 +202,7 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Lưu vào sharedpref
+  // Save multiplications to SharedPreferences
   Future<void> saveMultiplications() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> encodedMultiplications =
@@ -182,9 +213,11 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // Handle settings changes
   void onSettingsChanged() {
     _currentSettings = settingsProvider.settings;
 
+    // Reset practice session
     resetPractice();
 
     // Tạo danh sách mới trong Future để không chặn UI thread
@@ -199,9 +232,9 @@ class MultiplicationProvider with ChangeNotifier {
         _multiplications.clear();
 
         // Tạo danh sách mới trong background
-        // await _generateMultipleQuestionsAsync(100);
-        generateMultipleQuestions(50);
-        // Cập nhật phép tính hiện tại
+        await _generateMultipleQuestionsAsync(100);
+
+        // Cập nhật phép tính hiện tại và bắt đầu phiên luyện tập mới
         _setRandomCurrentMultiplication();
         startPracticeSession();
       } catch (e) {
@@ -289,6 +322,8 @@ class MultiplicationProvider with ChangeNotifier {
       selectedAnswer: selectedAnswer,
       isCorrect: isCorrect,
     );
+
+    // Add to history
     _answerHistory.add(answerRecord);
     _currentSessionAnswers.add(answerRecord);
 
@@ -296,7 +331,7 @@ class MultiplicationProvider with ChangeNotifier {
       _correctAnswersCount++;
 
       // Update star rating
-      _updateStar(true);
+      updateStar(true);
 
       // Wait for visual feedback
       await Future.delayed(const Duration(seconds: 1));
@@ -311,14 +346,14 @@ class MultiplicationProvider with ChangeNotifier {
         }
       }
     } else {
-      _updateStar(false);
+      updateStar(false);
     }
 
     notifyListeners();
   }
 
-  // Cập nhật sao
-  void _updateStar(bool isCorrect) {
+  // Update star rating
+  void updateStar(bool isCorrect) {
     if (_currentMultiplication == null) return;
 
     final index = _multiplications.indexWhere(
@@ -368,7 +403,7 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Lấy ngẫu nhiên phép tính trong list hiện tại
+  // Set random current multiplication
   void _setRandomCurrentMultiplication() {
     if (_multiplications.isNotEmpty) {
       final random = Random();
@@ -378,6 +413,48 @@ class MultiplicationProvider with ChangeNotifier {
     } else {
       generateMultipleQuestions(100);
     }
+  }
+
+  void retryCorrectAnswers() {
+    // Lọc ra các câu trả lời đúng từ _answerHistory
+    final correctAnswers =
+        _answerHistory.where((record) => record.isCorrect).toList();
+
+    if (correctAnswers.isEmpty) return;
+
+    // Tạo practice set mới từ các câu trả lời đúng
+    _practiceSet =
+        correctAnswers
+            .map(
+              (record) => Multiplication(
+                number1: record.number1,
+                number2: record.number2,
+                result: record.result,
+                star: 0,
+              ),
+            )
+            .toList();
+
+    // Nếu có nhiều hơn PRACTICE_SET_SIZE câu, chọn ngẫu nhiên PRACTICE_SET_SIZE câu
+    if (_practiceSet.length > PRACTICE_SET_SIZE) {
+      _practiceSet.shuffle();
+      _practiceSet = _practiceSet.sublist(0, PRACTICE_SET_SIZE);
+    }
+
+    // Reset các trạng thái
+    _currentPracticeIndex = 0;
+    _currentMultiplication = _practiceSet[0];
+    _currentSessionAnswers.clear();
+    _correctAnswersCount = 0;
+    _answerHistory.clear();
+    notifyListeners();
+  }
+
+  int sumStar(List<Multiplication> list) {
+    return list.fold(
+      0,
+      (previousValue, multiplication) => previousValue + multiplication.star,
+    );
   }
 }
 

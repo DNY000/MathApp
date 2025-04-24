@@ -125,6 +125,7 @@ class _ChonKetquaChiaState extends State<ChonKetquaChia> {
                   correctAnswers: provider.correctAnswersCount,
                   wrongAnswers: provider.wrongAnswersCount,
                   totalQuestions: DivisionProvider.PRACTICE_SET_SIZE,
+
                   stars:
                       provider.correctAnswersCount >= 8
                           ? 3

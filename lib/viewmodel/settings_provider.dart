@@ -45,6 +45,17 @@ class SettingsProvider extends ChangeNotifier {
     notifySettingsChanged();
   }
 
+  void updateProcessing(bool isMultiplication, int processing) {
+    if (isMultiplication) {
+      _settings = _settings.copyWith(processingMul: processing);
+    } else {
+      _settings = _settings.copyWith(processingDivison: processing);
+    }
+    _saveSettings();
+    notifyListeners();
+    notifySettingsChanged();
+  }
+
   void updateResultRange(RangeValues range) {
     _settings = _settings.copyWith(resultRange: range);
     _saveSettings();

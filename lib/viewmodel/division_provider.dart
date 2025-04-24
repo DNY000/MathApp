@@ -360,4 +360,46 @@ class DivisionProvider with ChangeNotifier {
     );
     return division.star;
   }
+
+  void retryCorrectAnswers() {
+    // Lọc ra các câu trả lời đúng từ _answerHistory
+    final correctAnswers =
+        _answerHistory.where((record) => record.isCorrect).toList();
+
+    if (correctAnswers.isEmpty) return;
+
+    // Tạo practice set mới từ các câu trả lời đúng
+    _practiceSet =
+        correctAnswers
+            .map(
+              (record) => Division(
+                number1: record.number1,
+                number2: record.number2,
+                result: record.result,
+                star: 0,
+              ),
+            )
+            .toList();
+
+    // Nếu có nhiều hơn PRACTICE_SET_SIZE câu, chọn ngẫu nhiên PRACTICE_SET_SIZE câu
+    if (_practiceSet.length > PRACTICE_SET_SIZE) {
+      _practiceSet.shuffle();
+      _practiceSet = _practiceSet.sublist(0, PRACTICE_SET_SIZE);
+    }
+
+    // Reset các trạng thái
+    _currentPracticeIndex = 0;
+    _currentDivision = _practiceSet[0];
+    _currentSessionAnswers.clear();
+    _correctAnswersCount = 0;
+    _answerHistory.clear();
+    notifyListeners();
+  }
+
+  int sumStar(List<Division> list) {
+    return list.fold(
+      0,
+      (previousValue, divison) => previousValue + divison.star,
+    );
+  }
 }

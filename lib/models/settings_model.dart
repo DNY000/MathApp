@@ -9,7 +9,9 @@ class SettingsModel {
   double practicePercentage;
   bool showBlocks;
   int answerTimeSeconds;
-
+  int processingDivison;
+  int processingMul;
+  int sumCount;
   SettingsModel({
     this.isMultiplication = true,
     this.resultRange = const RangeValues(1, 90000),
@@ -19,6 +21,9 @@ class SettingsModel {
     this.practicePercentage = 20,
     this.showBlocks = true,
     this.answerTimeSeconds = 15,
+    this.processingDivison = 0,
+    this.processingMul = 0,
+    this.sumCount = 0,
   });
 
   // Convert to JSON for storage
@@ -34,6 +39,9 @@ class SettingsModel {
       'practicePercentage': practicePercentage,
       'showBlocks': showBlocks,
       'answerTimeSeconds': answerTimeSeconds,
+      'processingDivison': processingDivison,
+      'processingMul': processingMul,
+      'sumCount': sumCount,
     };
   }
 
@@ -54,6 +62,9 @@ class SettingsModel {
       practicePercentage: json['practicePercentage']?.toDouble() ?? 20,
       showBlocks: json['showBlocks'] ?? true,
       answerTimeSeconds: json['answerTimeSeconds'] ?? 15,
+      processingDivison: json['processingDivison'] ?? 0.0,
+      processingMul: json['processingMul'] ?? 0.0,
+      sumCount: json['sumCount'] ?? 0,
     );
   }
 
@@ -68,6 +79,9 @@ class SettingsModel {
     int? answerTimeSeconds,
     String? operator,
     bool? checkNumberRange,
+    int? processingDivison,
+    int? processingMul,
+    int? sumCount,
   }) {
     return SettingsModel(
       isMultiplication: isMultiplication ?? this.isMultiplication,
@@ -78,6 +92,9 @@ class SettingsModel {
       practicePercentage: practicePercentage ?? this.practicePercentage,
       showBlocks: showBlocks ?? this.showBlocks,
       answerTimeSeconds: answerTimeSeconds ?? this.answerTimeSeconds,
+      processingDivison: processingDivison ?? this.processingDivison,
+      processingMul: processingMul ?? this.processingMul,
+      sumCount: sumCount ?? this.sumCount,
     );
   }
 }
