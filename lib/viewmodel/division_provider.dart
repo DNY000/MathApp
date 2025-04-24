@@ -11,61 +11,230 @@ class DivisionProvider with ChangeNotifier {
   List<Division> _divisions = [];
   Division? _currentDivision;
   final SettingsProvider settingsProvider;
-  late final SettingsModel _currentSettings;
+  late SettingsModel _currentSettings;
   final List<AnswerRecord> _answerHistory = [];
+  final List<AnswerRecord> _currentSessionAnswers = [];
+
+  // Practice properties
+  List<Division> _practiceSet = [];
+  int _currentPracticeIndex = 0;
+  static const int PRACTICE_SET_SIZE = 10;
+  int _correctAnswersCount = 0;
 
   // Getters
   List<Division> get divisions => _divisions;
   Division? get currentDivision => _currentDivision;
   List<AnswerRecord> get answerHistory => _answerHistory;
+  List<AnswerRecord> get currentSessionAnswers => _currentSessionAnswers;
+  bool get isPracticeComplete => _correctAnswersCount >= PRACTICE_SET_SIZE;
+  int get correctAnswersCount => _correctAnswersCount;
+  int get wrongAnswersCount =>
+      _currentSessionAnswers.length - _correctAnswersCount;
 
-  // Add getters for correct and wrong answers count
-  int get correctAnswers =>
-      _answerHistory.where((record) => record.isCorrect).length;
-  int get wrongAnswers =>
-      _answerHistory.where((record) => !record.isCorrect).length;
+  DivisionProvider({required this.settingsProvider}) {
+    _currentSettings = settingsProvider.settings;
+    settingsProvider.addListener(onSettingsChanged);
+    _initializeData();
+  }
 
-  // Add method to record answers
-  void recordAnswer(bool isCorrect, int selectedAnswer) {
-    if (_currentDivision != null) {
-      _answerHistory.add(
-        AnswerRecord(
-          number1: _currentDivision!.number1,
-          number2: _currentDivision!.number2,
-          result: _currentDivision!.result,
-          isCorrect: isCorrect,
-          selectedAnswer: selectedAnswer,
-        ),
-      );
+  void onSettingsChanged() {
+    // Thay vì gán trực tiếp, chỉ cập nhật giá trị của _currentSettings
+    final newSettings = settingsProvider.settings;
+    if (_currentSettings != newSettings) {
+      _currentSettings = newSettings;
+
+      // Reset practice session
+      resetPractice();
+
+      // Tạo danh sách mới trong Future để không chặn UI thread
+      Future(() async {
+        try {
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+
+          // Xóa dữ liệu cũ
+          await prefs.remove('divisions');
+
+          // Xóa danh sách cũ
+          _divisions.clear();
+          _currentDivision = null;
+
+          // Tạo danh sách mới trong background
+          await generateMultipleQuestions(100);
+
+          // Cập nhật phép tính hiện tại và bắt đầu phiên luyện tập mới
+          _setRandomCurrentDivision();
+          startPracticeSession();
+        } catch (e) {
+          throw Exception(e);
+        }
+      });
+    }
+  }
+
+  Future<void> _initializeData() async {
+    await _loadDivisions();
+    if (_divisions.isEmpty) {
+      await generateMultipleQuestions(100);
+    }
+    startPracticeSession();
+  }
+
+  // Reset practice session
+  void resetPractice() {
+    _practiceSet.clear();
+    _currentPracticeIndex = 0;
+    _currentSessionAnswers.clear();
+    _correctAnswersCount = 0;
+    notifyListeners();
+  }
+
+  // Start new practice session
+  void startPracticeSession() {
+    resetPractice();
+
+    if (_divisions.isEmpty) {
+      generateMultipleQuestions(100);
+      return;
+    }
+
+    // Randomly select questions based on settings
+    final random = Random();
+    final availableIndices = List.generate(_divisions.length, (i) => i);
+
+    while (_practiceSet.length < PRACTICE_SET_SIZE &&
+        availableIndices.isNotEmpty) {
+      final randomIndex = random.nextInt(availableIndices.length);
+      final questionIndex = availableIndices[randomIndex];
+      _practiceSet.add(_divisions[questionIndex]);
+      availableIndices.removeAt(randomIndex);
+    }
+
+    if (_practiceSet.isNotEmpty) {
+      _currentDivision = _practiceSet[0];
       notifyListeners();
     }
   }
 
-  // Add method to clear history when starting new practice
-  void clearAnswerHistory() {
-    _answerHistory.clear();
+  // Record answer and handle UI updates
+  Future<void> recordAnswer(int selectedAnswer) async {
+    if (_currentDivision == null) return;
+
+    final bool isCorrect = selectedAnswer == _currentDivision!.result;
+
+    // Create answer record
+    final answerRecord = AnswerRecord(
+      number1: _currentDivision!.number1,
+      number2: _currentDivision!.number2,
+      result: _currentDivision!.result,
+      selectedAnswer: selectedAnswer,
+      isCorrect: isCorrect,
+    );
+
+    // Add to history
+    _answerHistory.add(answerRecord);
+    _currentSessionAnswers.add(answerRecord);
+
+    if (isCorrect) {
+      _correctAnswersCount++;
+
+      // Update star rating
+      _updateStar(true);
+
+      // Wait for visual feedback
+      await Future.delayed(const Duration(seconds: 1));
+
+      // Move to next question if not complete
+      if (!isPracticeComplete) {
+        if (_currentPracticeIndex < _practiceSet.length - 1) {
+          _currentPracticeIndex++;
+          _currentDivision = _practiceSet[_currentPracticeIndex];
+        } else {
+          startPracticeSession();
+        }
+      }
+    } else {
+      _updateStar(false);
+    }
+
     notifyListeners();
   }
 
-  DivisionProvider({required this.settingsProvider}) {
-    _currentSettings = settingsProvider.settings;
-    _loadDivisions();
-  }
+  // Update star rating
+  void _updateStar(bool isCorrect) {
+    if (_currentDivision == null) return;
 
-  Future<void> onSettingsUpdated() async {
-    final newSettings = settingsProvider.settings;
-    if (_hasSettingsChanged(newSettings)) {
-      _currentSettings = newSettings;
-      await cleanListDivision();
-      await generateMultipleQuestions(100);
-      await _setRandomCurrentDivision();
+    final index = _divisions.indexWhere(
+      (d) =>
+          d.number1 == _currentDivision!.number1 &&
+          d.number2 == _currentDivision!.number2,
+    );
+
+    if (index != -1) {
+      int currentStar = _divisions[index].star;
+      int newStar = isCorrect ? currentStar + 1 : currentStar - 1;
+      newStar = newStar.clamp(0, 5);
+
+      _divisions[index] = Division(
+        number1: _currentDivision!.number1,
+        number2: _currentDivision!.number2,
+        result: _currentDivision!.result,
+        star: newStar,
+      );
+
+      _currentDivision = _divisions[index];
+      saveDivisions();
     }
   }
 
-  bool _hasSettingsChanged(SettingsModel newSettings) {
-    return _currentSettings.resultRange != newSettings.resultRange ||
-        _currentSettings.numberRange != newSettings.numberRange ||
-        _currentSettings.isMultiplication != newSettings.isMultiplication;
+  Future<void> generateMultipleQuestions(int count) async {
+    final random = Random();
+
+    // Lấy khoảng từ settings
+    final resultStart = settingsProvider.settings.resultRange.start.toInt();
+    final resultEnd = settingsProvider.settings.resultRange.end.toInt();
+    final numberStart = settingsProvider.settings.numberRange.start.toInt();
+    final numberEnd = settingsProvider.settings.numberRange.end.toInt();
+
+    _divisions.clear();
+    int attempts = 0;
+    const maxAttempts = 1000;
+
+    while (_divisions.length < count && attempts < maxAttempts) {
+      attempts++;
+
+      // 1. Random thương số (result) trong khoảng numberRange
+      int result = numberStart + random.nextInt(numberEnd - numberStart + 1);
+
+      // 2. Random số bị chia (number1) trong khoảng resultRange
+      int number1 = resultStart + random.nextInt(resultEnd - resultStart + 1);
+
+      // 3. Tính số chia (number2) = số bị chia / thương số
+      if (result != 0 && number1 % result == 0) {
+        int number2 = number1 ~/ result;
+
+        // Kiểm tra số chia có trong khoảng cho phép
+        if (number2 >= numberStart && number2 <= numberEnd) {
+          Division division = Division(
+            number1: number1, // số bị chia
+            number2: number2, // số chia
+            result: result, // thương số
+            star: 0,
+          );
+
+          if (!_divisions.contains(division)) {
+            _divisions.add(division);
+          }
+        }
+      }
+
+      // Cho phép UI cập nhật sau mỗi 20 phép tính
+      if (_divisions.length % 20 == 0) {
+        await Future.delayed(Duration.zero);
+      }
+    }
+
+    await saveDivisions();
+    notifyListeners();
   }
 
   Future<void> _setRandomCurrentDivision() async {
@@ -166,114 +335,12 @@ class DivisionProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> generateMultipleQuestions(int count) async {
-    final random = Random();
-
-    // Lấy khoảng từ settings
-    double resultRangeStart = settingsProvider.settings.resultRange.start;
-    double resultRangeEnd = settingsProvider.settings.resultRange.end;
-    double numberRangeStart = settingsProvider.settings.numberRange.start;
-    double numberRangeEnd = settingsProvider.settings.numberRange.end;
-
-    // Chuyển về int để dễ tính toán
-    final resultStart = resultRangeStart.toInt();
-    final resultEnd = resultRangeEnd.toInt();
-    final numberStart = numberRangeStart.toInt();
-    final numberEnd = numberRangeEnd.toInt();
-
-    // Xóa danh sách cũ
-    _divisions.clear();
-    int maxAttempts = 1000;
-    int attempts = 0;
-
-    // Tạo phép chia cho đến khi đủ số lượng hoặc đã thử quá nhiều lần
-    while (_divisions.length < count && attempts < maxAttempts) {
-      attempts++;
-
-      // Tạo số chia (divisor) và thương số (quotient) trước
-      int number2 =
-          numberStart +
-          random.nextInt(numberEnd - numberStart + 1); // số chia (number2)
-      int number1 =
-          numberStart +
-          random.nextInt(numberEnd - numberStart + 1); // thương số (result)
-
-      // Tính số bị chia (dividend) = số chia * thương số
-      int result = number1 * number2; // số bị chia (number1)
-
-      // Kiểm tra xem số bị chia có trong khoảng cho phép không
-      if (result >= resultStart && result <= resultEnd && number2 != 0) {
-        // Tạo đối tượng Division (số bị chia, số chia, thương số)
-        Division division = Division(
-          number1: result, // số bị chia (dividend)
-          number2: number2, // số chia (divisor)
-          result: number1, // thương số (quotient)
-          star: 0,
-        );
-
-        // Thêm vào danh sách nếu chưa tồn tại
-        if (!_divisions.contains(division)) {
-          _divisions.add(division);
-        }
-
-        // Cho phép UI cập nhật sau mỗi 20 phép tính được tạo
-        if (_divisions.length % 20 == 0) {
-          await Future.delayed(Duration.zero);
-        }
-      }
-    }
-
-    // Nếu không tạo được phép chia nào, thêm ít nhất một phép chia hợp lệ
-    if (_divisions.isEmpty) {
-      int divisor = numberStart; // Bắt đầu với số chia nhỏ nhất
-      int quotient = numberStart; // Bắt đầu với thương số nhỏ nhất
-      int dividend = divisor * quotient; // Tính số bị chia
-
-      if (dividend <= resultEnd) {
-        _divisions.add(
-          Division(
-            number1: dividend,
-            number2: divisor,
-            result: quotient,
-            star: 0,
-          ),
-        );
-      }
-    }
-
-    // Lưu danh sách vào SharedPreferences
-    await saveDivisions();
-    notifyListeners();
-  }
-
   Future<void> cleanListDivision() async {
     _divisions.clear();
     _currentDivision = null;
     SharedPreferences pref = await SharedPreferences.getInstance();
     await pref.remove('divisions');
     notifyListeners();
-  }
-
-  void updateStar(int count) {
-    if (_currentDivision != null) {
-      final index = _divisions.indexWhere(
-        (d) =>
-            d.number1 == _currentDivision!.number1 &&
-            d.number2 == _currentDivision!.number2,
-      );
-
-      if (index != -1) {
-        _divisions[index] = Division(
-          number1: _currentDivision!.number1,
-          number2: _currentDivision!.number2,
-          result: _currentDivision!.result,
-          star: count,
-        );
-        _currentDivision = _divisions[index];
-        saveDivisions();
-        notifyListeners();
-      }
-    }
   }
 
   int getTotalStars() {

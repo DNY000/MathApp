@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/circle_button.dart';
+import 'package:math_app/common/widgets/countdown_progress.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/ultis/t_image.dart';
 
@@ -9,13 +10,16 @@ class TAppbar extends StatelessWidget implements PreferredSizeWidget {
   final int processing;
   final bool showProcess;
   final bool showBack;
-
+  final bool showAction;
+  final String? actionText;
   const TAppbar({
     super.key,
     required this.name,
     this.processing = 0,
     this.showProcess = false,
     required this.showBack,
+    this.showAction = false,
+    this.actionText,
   });
 
   @override
@@ -48,8 +52,8 @@ class TAppbar extends StatelessWidget implements PreferredSizeWidget {
               )
               : null,
       actions: [
-        if (showProcess)
-          Text('$processing/10', style: TextStyle(fontSize: 18.sp)),
+        if (showAction)
+          Text(actionText ?? '', style: TextStyle(fontSize: 18.sp)),
       ],
     );
   }

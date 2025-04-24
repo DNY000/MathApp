@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:math_app/common/widgets/countdown_progress.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/ultis/t_image.dart';
@@ -10,9 +11,17 @@ class AdsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TAppbar(name: "Remove ads", showBack: true),
+      appBar: TAppbar(
+        name: "Remove ads",
+        showBack: true,
+        showProcess: false,
+        showAction: true,
+        actionText: 'Action',
+      ),
       body: Column(
         children: [
+          // CountdownProgress(durationInSeconds: 10, onComplete: () {}),
+          // CustomAppBar(title: 'Remove ads', showBack: true, showProcess: false),
           Padding(
             padding: EdgeInsets.only(top: 32.h),
             child: Center(

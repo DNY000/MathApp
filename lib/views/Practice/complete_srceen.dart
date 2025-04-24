@@ -24,7 +24,7 @@ class CompleteScreen extends StatelessWidget {
         (correctAnswers / (correctAnswers + wrongAnswers)) * 100;
 
     return Scaffold(
-      appBar: TAppbar(name: 'Kết quả', showBack: true),
+      appBar: TAppbar(name: 'Kết quả', showBack: false),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Column(
@@ -102,7 +102,7 @@ class CompleteScreen extends StatelessWidget {
               textColor: Colors.black,
               borderColor: Colors.black12,
               onTap: () {
-                Navigator.of(context).pop();
+                Navigator.of(context).popUntil((route) => route.isFirst);
               },
             ),
           ],

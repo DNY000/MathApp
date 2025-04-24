@@ -214,7 +214,12 @@ class DotContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int columns = dotCount % 2 == 0 ? 2 : 3;
+    final int columns =
+        (dotCount == 8 || dotCount == 10)
+            ? 3
+            : dotCount % 2 == 0
+            ? 2
+            : 3;
     final int rows = (dotCount / columns).ceil();
 
     return Container(
@@ -276,8 +281,8 @@ class _ChonKetquaState extends State<ChonKetqua> {
   Set<int> wrongAnswers = {};
   int? selectedAnswer;
   bool? isCorrectAnswer;
+  bool isProcessing = false;
 
-  // Create a random number generator
   final Random random = Random();
 
   @override
@@ -290,104 +295,92 @@ class _ChonKetquaState extends State<ChonKetqua> {
   void didUpdateWidget(ChonKetqua oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.currentMultiplication != oldWidget.currentMultiplication) {
+      setState(() {
+        selectedAnswer = null;
+        isCorrectAnswer = null;
+        wrongAnswers.clear();
+        isProcessing = false;
+      });
       _generateAnswerOptions();
     }
   }
 
+  // tạo kết quả sai
   void _generateAnswerOptions() {
     if (widget.currentMultiplication == null) return;
 
-    // Clear previous answers
     dsketqua.clear();
-
-    // Add the correct answer
     dsketqua.add(widget.currentMultiplication!.result);
 
-    // Generate 3 unique wrong answers
+    final int correctResult = widget.currentMultiplication!.result;
+    final int minRange = max(1, (correctResult * 0.8).toInt());
+    final int maxRange = max(minRange + 10, (correctResult * 1.2).toInt());
+
     while (dsketqua.length < 4) {
-      // Generate a random number within 20% of the correct answer
-      int minRange = (widget.currentMultiplication!.result * 0.8).toInt();
-      int maxRange = (widget.currentMultiplication!.result * 1.2).toInt();
-
-      // Ensure positive values
-      minRange = max(1, minRange);
-      maxRange = max(minRange + 10, maxRange);
-
       int wrongAnswer = minRange + random.nextInt(maxRange - minRange);
-
-      if (wrongAnswer != widget.currentMultiplication!.result &&
-          !dsketqua.contains(wrongAnswer)) {
+      if (wrongAnswer != correctResult && !dsketqua.contains(wrongAnswer)) {
         dsketqua.add(wrongAnswer);
       }
     }
 
-    // Shuffle the answers
     dsketqua.shuffle();
   }
 
-  void _handleAnswerSelection(int selected) async {
-    if (widget.currentMultiplication == null) return;
-
-    final bool isCorrect = selected == widget.currentMultiplication!.result;
+  Future<void> _handleAnswerSelection(int selected) async {
+    if (widget.currentMultiplication == null || isProcessing) return;
 
     setState(() {
+      isProcessing = true;
       selectedAnswer = selected;
+    });
+
+    final bool isCorrect = selected == widget.currentMultiplication!.result;
+    final multiplicationProvider = Provider.of<MultiplicationProvider>(
+      context,
+      listen: false,
+    );
+
+    setState(() {
       isCorrectAnswer = isCorrect;
       if (!isCorrect) {
         wrongAnswers.add(selected);
       }
     });
 
-    final multiplicationProvider = Provider.of<MultiplicationProvider>(
-      context,
-      listen: false,
-    );
+    await multiplicationProvider.recordAnswer(selected);
 
     if (isCorrect) {
-      // Record the answer and update stars
-      multiplicationProvider.recordAnswer(true, selected);
-      multiplicationProvider.updateStar(true);
+      await Future.delayed(const Duration(seconds: 1));
 
-      // Wait a moment to show the green color
-      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
 
-      // Check if we've completed 10 questions
       if (multiplicationProvider.isPracticeComplete) {
-        // ignore: use_build_context_synchronously
         Navigator.of(context).push(
           MaterialPageRoute(
             builder:
                 (context) => CompleteScreen(
-                  correctAnswers: multiplicationProvider.correctAnswers,
-                  wrongAnswers: multiplicationProvider.wrongAnswers,
+                  correctAnswers: multiplicationProvider.correctAnswersCount,
+                  wrongAnswers: multiplicationProvider.wrongAnswersCount,
                   totalQuestions: MultiplicationProvider.PRACTICE_SET_SIZE,
                   stars:
-                      multiplicationProvider.correctAnswers >= 8
+                      multiplicationProvider.correctAnswersCount >= 8
                           ? 3
-                          : multiplicationProvider.correctAnswers >= 5
+                          : multiplicationProvider.correctAnswersCount >= 5
                           ? 2
                           : 1,
                 ),
           ),
         );
-      } else {
-        // Reset state and show next multiplication
-        setState(() {
-          selectedAnswer = null;
-          isCorrectAnswer = null;
-          wrongAnswers.clear();
-        });
-        widget.onShowNextMultiplication();
       }
     } else {
-      // Record wrong answer
-      multiplicationProvider.recordAnswer(false, selected);
-      multiplicationProvider.updateStar(false);
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
 
-      // Allow user to try again immediately
+    if (mounted) {
       setState(() {
         selectedAnswer = null;
         isCorrectAnswer = null;
+        isProcessing = false;
       });
     }
   }
@@ -413,33 +406,23 @@ class _ChonKetquaState extends State<ChonKetqua> {
                       answer == widget.currentMultiplication?.result;
 
                   Color backgroundColor = Colors.white;
-                  Color borderColor = TColors.borderbrown;
-
-                  if (isSelected && isCorrect) {
-                    backgroundColor = Colors.green;
-                    borderColor = TColors.borderbrown;
-                  } else if (isWrong) {
-                    backgroundColor = Colors.red;
-                    borderColor = TColors.borderbrown;
+                  if (isSelected) {
+                    backgroundColor = isCorrect ? Colors.green : Colors.red;
                   }
 
                   return GestureDetector(
                     onTap:
-                        (!isWrong && selectedAnswer == null)
+                        (!isWrong && !isProcessing)
                             ? () => _handleAnswerSelection(answer)
                             : null,
                     child: Container(
                       decoration: BoxDecoration(
                         color: backgroundColor,
                         borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: borderColor, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFF8B4513),
-                            offset: const Offset(0, 2),
-                            blurRadius: 4,
-                          ),
-                        ],
+                        border: Border.all(
+                          color: TColors.borderbrown,
+                          width: 2,
+                        ),
                       ),
                       child: Center(
                         child: Text(

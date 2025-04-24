@@ -16,7 +16,10 @@ class DivisionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<DivisionProvider>(
       builder: (context, division, child) {
-        final div = division.currentDivision!;
+        final div = division.currentDivision;
+        if (div == null) {
+          return const Center(child: CircularProgressIndicator());
+        }
         return Padding(
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           child: Column(
@@ -43,58 +46,63 @@ class ChonKetquaChia extends StatefulWidget {
 }
 
 class _ChonKetquaChiaState extends State<ChonKetquaChia> {
+  List<int> dsketqua = [];
   Set<int> wrongAnswers = {};
   int? selectedAnswer;
   bool? isCorrectAnswer;
-  late List<int> options;
+  bool isProcessing = false;
   late Division currentDivision;
 
   @override
   void initState() {
     super.initState();
     currentDivision = widget.division;
-    options = _generateAnswerOptions(currentDivision.result);
+    _generateAnswerOptions();
   }
 
   @override
   void didUpdateWidget(ChonKetquaChia oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.division != widget.division) {
+    if (oldWidget.division.number1 != widget.division.number1 ||
+        oldWidget.division.number2 != widget.division.number2) {
       currentDivision = widget.division;
-      options = _generateAnswerOptions(currentDivision.result);
-      selectedAnswer = null;
-      isCorrectAnswer = null;
-      wrongAnswers.clear();
+      _generateAnswerOptions();
+      setState(() {
+        selectedAnswer = null;
+        isCorrectAnswer = null;
+        wrongAnswers.clear();
+        isProcessing = false;
+      });
     }
   }
 
-  List<int> _generateAnswerOptions(int correctAnswer) {
-    final List<int> options = [correctAnswer];
+  void _generateAnswerOptions() {
+    dsketqua.clear();
+    dsketqua.add(currentDivision.result);
+
     final random = Random();
+    final int correctResult = currentDivision.result;
+    final int minRange = max(1, (correctResult * 0.8).toInt());
+    final int maxRange = max(minRange + 10, (correctResult * 1.2).toInt());
 
-    while (options.length < 4) {
-      // Generate wrong answers that make sense for division
-      int wrongAnswer;
-      if (random.nextBool()) {
-        wrongAnswer = correctAnswer + random.nextInt(3) + 1;
-      } else {
-        wrongAnswer = correctAnswer - random.nextInt(3) - 1;
-      }
-
-      if (wrongAnswer > 0 && !options.contains(wrongAnswer)) {
-        options.add(wrongAnswer);
+    while (dsketqua.length < 4) {
+      int wrongAnswer = minRange + random.nextInt(maxRange - minRange);
+      if (wrongAnswer != correctResult && !dsketqua.contains(wrongAnswer)) {
+        dsketqua.add(wrongAnswer);
       }
     }
-    options.shuffle();
-    return options;
+
+    dsketqua.shuffle();
   }
 
-  void _handleAnswerSelection(int selected) async {
-    if (!mounted) return;
+  Future<void> _handleAnswerSelection(int selected) async {
+    if (isProcessing) return;
 
     final bool isCorrect = selected == currentDivision.result;
+    final provider = context.read<DivisionProvider>();
 
     setState(() {
+      isProcessing = true;
       selectedAnswer = selected;
       isCorrectAnswer = isCorrect;
       if (!isCorrect) {
@@ -102,85 +110,41 @@ class _ChonKetquaChiaState extends State<ChonKetquaChia> {
       }
     });
 
-    try {
-      final provider = context.read<DivisionProvider>();
+    await provider.recordAnswer(selected);
 
-      // Record the answer
-      provider.recordAnswer(isCorrect, selected);
+    if (isCorrect) {
+      await Future.delayed(const Duration(seconds: 1));
 
-      if (isCorrect) {
-        // Update star count
-        provider.updateStar(1);
+      if (!mounted) return;
 
-        // Wait a moment to show the green color
-        await Future.delayed(const Duration(milliseconds: 500));
+      if (provider.isPracticeComplete) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder:
+                (context) => CompleteScreen(
+                  correctAnswers: provider.correctAnswersCount,
+                  wrongAnswers: provider.wrongAnswersCount,
+                  totalQuestions: DivisionProvider.PRACTICE_SET_SIZE,
+                  stars:
+                      provider.correctAnswersCount >= 8
+                          ? 3
+                          : provider.correctAnswersCount >= 5
+                          ? 2
+                          : 1,
+                ),
+          ),
+        );
+      }
+    } else {
+      await Future.delayed(const Duration(milliseconds: 500));
 
-        // Check if we've completed 10 questions
-        if (provider.correctAnswers + provider.wrongAnswers >= 10) {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder:
-                  (context) => CompleteScreen(
-                    correctAnswers: provider.correctAnswers,
-                    wrongAnswers: provider.wrongAnswers,
-                    totalQuestions: 10,
-                    stars:
-                        provider.correctAnswers >= 8
-                            ? 3
-                            : provider.correctAnswers >= 5
-                            ? 2
-                            : 1,
-                  ),
-            ),
-          );
-          return;
-        }
-
-        // Get next question
-        await provider.updateCurrentDivision(currentDivision);
-
-        if (mounted) {
-          setState(() {
-            currentDivision = provider.currentDivision!;
-            options = _generateAnswerOptions(currentDivision.result);
-            selectedAnswer = null;
-            isCorrectAnswer = null;
-            wrongAnswers.clear();
-          });
-        }
-      } else {
-        // For wrong answer, just update the star count
-        provider.updateStar(0);
-
-        // Reset selection to allow another try
+      if (mounted) {
         setState(() {
           selectedAnswer = null;
           isCorrectAnswer = null;
+          isProcessing = false;
         });
-
-        // Check if we've completed 10 questions
-        if (provider.correctAnswers + provider.wrongAnswers >= 10) {
-          await Future.delayed(const Duration(milliseconds: 500));
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder:
-                  (context) => CompleteScreen(
-                    correctAnswers: provider.correctAnswers,
-                    wrongAnswers: provider.wrongAnswers,
-                    totalQuestions: 10,
-                    stars:
-                        provider.correctAnswers >= 8
-                            ? 3
-                            : provider.correctAnswers >= 5
-                            ? 2
-                            : 1,
-                  ),
-            ),
-          );
-        }
       }
-    } catch (e) {
-      throw Exception(e);
     }
   }
 
@@ -195,39 +159,26 @@ class _ChonKetquaChiaState extends State<ChonKetquaChia> {
         crossAxisSpacing: 16.w,
         childAspectRatio: 1.5,
         children:
-            options.map((answer) {
+            dsketqua.map((answer) {
               final bool isWrong = wrongAnswers.contains(answer);
               final bool isSelected = selectedAnswer == answer;
               final bool isCorrect = answer == currentDivision.result;
 
               Color backgroundColor = Colors.white;
-              Color borderColor = TColors.borderbrown;
-
-              if (isSelected && isCorrect) {
-                backgroundColor = Colors.green;
-                borderColor = TColors.borderbrown;
-              } else if (isWrong) {
-                backgroundColor = Colors.red;
-                borderColor = TColors.borderbrown;
+              if (isSelected) {
+                backgroundColor = isCorrect ? Colors.green : Colors.red;
               }
 
               return GestureDetector(
                 onTap:
-                    (!isWrong && selectedAnswer == null)
+                    (!isWrong && !isProcessing)
                         ? () => _handleAnswerSelection(answer)
                         : null,
                 child: Container(
                   decoration: BoxDecoration(
                     color: backgroundColor,
                     borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: borderColor, width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                        color: TColors.borderbrown,
-                        offset: const Offset(0, 2),
-                        blurRadius: 4,
-                      ),
-                    ],
+                    border: Border.all(color: TColors.borderbrown, width: 2),
                   ),
                   child: Center(
                     child: Text(
