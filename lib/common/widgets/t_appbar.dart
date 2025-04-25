@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/circle_button.dart';
-import 'package:math_app/common/widgets/countdown_progress.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/ultis/t_image.dart';
 
@@ -26,13 +25,16 @@ class TAppbar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       actionsPadding: EdgeInsets.symmetric(horizontal: 8.h),
+      automaticallyImplyLeading: false, // không tự động hiện thị appbar
+
       title: Text(
         name,
         style: TextStyle(fontSize: 18.sp, color: TColors.textBack),
       ),
       centerTitle: true,
-      backgroundColor: Colors.white,
+      backgroundColor: TColors.yellow2,
       elevation: 1,
+
       leading:
           showBack
               ? Padding(
@@ -52,6 +54,7 @@ class TAppbar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               )
               : null,
+
       actions: [
         if (showAction)
           Text(
@@ -59,6 +62,10 @@ class TAppbar extends StatelessWidget implements PreferredSizeWidget {
             style: TextStyle(fontSize: 18.sp, color: TColors.borderbrown),
           ),
       ],
+      bottom: PreferredSize(
+        preferredSize: Size.fromHeight(0.5.h), // độ cao của đường kẻ
+        child: Container(color: TColors.button, height: 1),
+      ),
     );
   }
 

@@ -8,12 +8,13 @@ import 'package:math_app/viewmodel/settings_provider.dart';
 import 'package:math_app/views/Practice/answer_list.dart';
 import 'package:math_app/views/testing/answer_list_testing.dart';
 import 'package:provider/provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class CompleteScreen extends StatelessWidget {
   final int correctAnswers;
   final int wrongAnswers;
   final int totalQuestions;
-  final int stars;
+
   final bool isTesting;
   final List<AnswerRecord>? answerHistory;
 
@@ -22,7 +23,7 @@ class CompleteScreen extends StatelessWidget {
     required this.correctAnswers,
     required this.wrongAnswers,
     this.totalQuestions = 10,
-    this.stars = 0,
+
     this.answerHistory,
     this.isTesting = false,
   });
@@ -38,7 +39,7 @@ class CompleteScreen extends StatelessWidget {
     final int process = isTesting ? 0 : mul.sumStar(mul.multiplications);
 
     return Scaffold(
-      appBar: TAppbar(name: 'Kết quả', showBack: false),
+      appBar: TAppbar(name: 'Kết quả'.tr(), showBack: false),
       body: Padding(
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         child: Column(
@@ -52,7 +53,7 @@ class CompleteScreen extends StatelessWidget {
                   'Tiến trình học\ntập của bạn',
                   style: TextStyle(
                     fontSize: 15.sp,
-                    color: const Color(0xFF8B4513),
+                    color: TColors.borderbrown,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -90,16 +91,21 @@ class CompleteScreen extends StatelessWidget {
               children: [
                 _buildResultBox(
                   correctAnswers.toString(),
-                  'Chính xác',
+                  'Chính xác'.tr(),
                   Colors.green,
                 ),
-                _buildResultBox(wrongAnswers.toString(), 'Sai', Colors.red),
+                _buildResultBox(
+                  wrongAnswers.toString(),
+                  'Sai'.tr(),
+                  Colors.red,
+                ),
               ],
             ),
             SizedBox(height: 32.h),
 
             _buildActionButton(
-              'Danh sách câu hỏi',
+              'Danh sách câu hỏi'.tr(),
+              borderColor: TColors.backgroundBrown,
               Icons.list_alt,
               onTap: () {
                 Navigator.push(
@@ -117,7 +123,7 @@ class CompleteScreen extends StatelessWidget {
 
             SizedBox(height: 16.h),
             _buildActionButton(
-              'Chơi lại',
+              'Chơi lại'.tr(),
               Icons.refresh,
               onTap: () {
                 if (!isTesting) {
@@ -140,9 +146,9 @@ class CompleteScreen extends StatelessWidget {
 
             SizedBox(height: 16.h),
             _buildActionButton(
-              'Menu',
+              'Menu'.tr(),
               Icons.arrow_back,
-              backgroundColor: Colors.white,
+              backgroundColor: TColors.yellow2,
               textColor: Colors.black,
               borderColor: Colors.black12,
               onTap: () {

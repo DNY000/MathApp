@@ -7,6 +7,7 @@ import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/viewmodel/division_provider.dart';
 import 'package:math_app/views/Practice/complete_srceen.dart';
 import 'package:math_app/views/Practice/practice_screen.dart';
+import 'package:math_app/views/Practice/widgets/input_screen.dart';
 import 'package:provider/provider.dart';
 
 class DivisionScreen extends StatelessWidget {
@@ -26,8 +27,7 @@ class DivisionScreen extends StatelessWidget {
             children: [
               ContainerPractice<Division>(operation: div),
               SizedBox(height: 8.h),
-              Manhinhnhap(firstNumber: div.number1, secondNumber: div.number2),
-              SizedBox(height: 84.h),
+
               ChonKetquaChia(division: div),
             ],
           ),
@@ -52,7 +52,8 @@ class _ChonKetquaChiaState extends State<ChonKetquaChia> {
   bool? isCorrectAnswer;
   bool isProcessing = false;
   late Division currentDivision;
-
+  final GlobalKey<ManhinhnhapState> manhinhnhapKey =
+      GlobalKey<ManhinhnhapState>();
   @override
   void initState() {
     super.initState();
@@ -113,6 +114,8 @@ class _ChonKetquaChiaState extends State<ChonKetquaChia> {
     await provider.recordAnswer(selected);
 
     if (isCorrect) {
+      manhinhnhapKey.currentState?.startRotationAnimation();
+
       await Future.delayed(const Duration(seconds: 1));
 
       if (!mounted) return;
@@ -125,13 +128,6 @@ class _ChonKetquaChiaState extends State<ChonKetquaChia> {
                   correctAnswers: provider.correctAnswersCount,
                   wrongAnswers: provider.wrongAnswersCount,
                   totalQuestions: DivisionProvider.PRACTICE_SET_SIZE,
-
-                  stars:
-                      provider.correctAnswersCount >= 8
-                          ? 3
-                          : provider.correctAnswersCount >= 5
-                          ? 2
-                          : 1,
                 ),
           ),
         );
@@ -153,47 +149,89 @@ class _ChonKetquaChiaState extends State<ChonKetquaChia> {
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: GridView.count(
-        shrinkWrap: true,
-        crossAxisCount: 2,
-        mainAxisSpacing: 16.h,
-        crossAxisSpacing: 16.w,
-        childAspectRatio: 1.5,
-        children:
-            dsketqua.map((answer) {
-              final bool isWrong = wrongAnswers.contains(answer);
-              final bool isSelected = selectedAnswer == answer;
-              final bool isCorrect = answer == currentDivision.result;
+      child: Column(
+        children: [
+          Manhinhnhap(
+            firstNumber: currentDivision.number1,
+            secondNumber: currentDivision.number2,
+          ),
+          SizedBox(height: 84.h),
+          GridView.count(
+            shrinkWrap: true,
+            crossAxisCount: 2,
+            physics: NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 16.h,
+            crossAxisSpacing: 16.w,
+            childAspectRatio: 1.5,
+            children:
+                dsketqua.map((answer) {
+                  final bool isWrong = wrongAnswers.contains(answer);
+                  final bool isSelected = selectedAnswer == answer;
+                  final bool isCorrect = answer == currentDivision.result;
 
-              Color backgroundColor = Colors.white;
-              if (isSelected) {
-                backgroundColor = isCorrect ? Colors.green : Colors.red;
-              }
+                  Color backgroundColor = Colors.white;
+                  if (isSelected) {
+                    backgroundColor = isCorrect ? Colors.green : Colors.red;
+                  }
 
-              return GestureDetector(
-                onTap:
-                    (!isWrong && !isProcessing)
-                        ? () => _handleAnswerSelection(answer)
-                        : null,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: backgroundColor,
-                    borderRadius: BorderRadius.circular(12.r),
-                    border: Border.all(color: TColors.borderbrown, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      answer.toString(),
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w600,
-                        color: TColors.textBack,
+                  return GestureDetector(
+                    onTapDown: (_) {
+                      if (!isWrong && !isProcessing) {
+                        setState(() => selectedAnswer = answer); // bắt đầu nhấn
+                      }
+                    },
+                    onTapUp: (_) {
+                      if (!isWrong && !isProcessing) {
+                        _handleAnswerSelection(answer); // xử lý chọn
+                      }
+                    },
+                    onTapCancel: () {
+                      if (!isWrong && !isProcessing) {
+                        setState(
+                          () => selectedAnswer = null,
+                        ); // nếu nhả ra ngoài
+                      }
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 100),
+                      curve: Curves.easeInOut,
+                      transform:
+                          selectedAnswer == answer
+                              ? Matrix4.translationValues(0, 2, 0)
+                              : Matrix4.identity(),
+                      decoration: BoxDecoration(
+                        color: backgroundColor,
+                        borderRadius: BorderRadius.circular(12.r),
+                        border: Border.all(
+                          color: TColors.borderbrown,
+                          width: 2,
+                        ),
+                        boxShadow:
+                            selectedAnswer == answer
+                                ? [] // không shadow khi nhấn
+                                : [
+                                  BoxShadow(
+                                    color: Colors.black26,
+                                    blurRadius: 6,
+                                    offset: Offset(0, 4),
+                                  ),
+                                ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          answer.toString(),
+                          style: TextStyle(
+                            fontSize: 24.sp,
+                            fontWeight: FontWeight.w600,
+                            color: TColors.textBack,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-              );
-            }).toList(),
+                  );
+                }).toList(),
+          ),
+        ],
       ),
     );
   }

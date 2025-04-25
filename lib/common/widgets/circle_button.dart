@@ -27,7 +27,7 @@ class CircleButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor,
           shape: BoxShape.circle,
-          border: Border.all(width: 1, color: TColors.borderbrown),
+          border: Border.all(width: 1.w, color: TColors.borderbrown),
         ),
         child: Center(child: Image.asset(image, fit: BoxFit.cover)),
       ),

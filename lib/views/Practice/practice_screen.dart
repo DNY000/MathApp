@@ -7,13 +7,14 @@ import 'package:math_app/models/division.dart';
 import 'package:math_app/views/Practice/complete_srceen.dart';
 import 'package:math_app/views/Practice/division_screen.dart';
 import 'package:math_app/views/Practice/multiplicationo_screen.dart';
-import 'package:math_app/views/calculator/calculator_screen.dart';
+import 'package:math_app/views/Practice/widgets/input_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
 import 'package:math_app/models/multiplication.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/viewmodel/multiplication_provider.dart';
 import 'package:math_app/viewmodel/settings_provider.dart';
+import 'package:easy_localization/easy_localization.dart';
 
 class PracticeScreen extends StatefulWidget {
   const PracticeScreen({super.key});
@@ -27,7 +28,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
   void initState() {
     super.initState();
 
-    // Dùng Future đơn giản, không lồng nhau
+    // Start a new practice session instead of calling onSettingsChanged
     Future.delayed(Duration.zero, () {
       if (!mounted) return;
 
@@ -37,8 +38,10 @@ class _PracticeScreenState extends State<PracticeScreen> {
           listen: false,
         );
 
-        // Gọi trực tiếp không dùng Future lồng nhau
-        multiplicationProvider.onSettingsChanged();
+        // Only start a new practice session if there isn't one already
+        if (multiplicationProvider.practiceSet.isEmpty) {
+          multiplicationProvider.startPracticeSession();
+        }
       } catch (e) {
         throw Exception(e);
       }
@@ -52,7 +55,7 @@ class _PracticeScreenState extends State<PracticeScreen> {
         final bool isMul = settingsProvider.settings.isMultiplication;
         return Scaffold(
           appBar: TAppbar(
-            name: 'Bài học ',
+            name: 'Bài học'.tr(),
             showBack: true,
             showProcess: true,
             processing: 1,
@@ -60,88 +63,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
           body: isMul ? MultiplicationScreen() : DivisionScreen(),
         );
       },
-    );
-  }
-}
-
-class Manhinhnhap extends StatelessWidget {
-  final bool showRatingBar;
-  final int firstNumber;
-  final int secondNumber;
-
-  const Manhinhnhap({
-    super.key,
-    this.showRatingBar = true,
-    required this.firstNumber,
-    required this.secondNumber,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    SettingsProvider settingsProvider = Provider.of<SettingsProvider>(context);
-    bool isMul = settingsProvider.settings.isMultiplication;
-
-    return Container(
-      height: 127.h,
-      width: 343.w,
-      decoration: BoxDecoration(
-        color: TColors.yellow,
-        borderRadius: BorderRadius.circular(12.r),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(16.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Selector<MultiplicationProvider, int>(
-              builder: (context, value, child) => CustomRatingBar(count: value),
-              selector: (p0, p1) => p1.currentMultiplication!.star,
-            ),
-
-            SizedBox(height: 30.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                isMul
-                    ? Text(
-                      '$firstNumber x $secondNumber = ',
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    )
-                    : Text(
-                      '$firstNumber : $secondNumber = ',
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                Container(
-                  height: 40.h,
-                  width: 40.w,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: TColors.borderbrown),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '?',
-                      style: TextStyle(
-                        fontSize: 24.sp,
-                        fontWeight: FontWeight.w600,
-                        color: TColors.borderbrown,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -176,7 +97,7 @@ class ContainerPractice<T> extends StatelessWidget {
               ? secondNumber > 9 || firstNumber > 9
                   ? Center(
                     child: Text(
-                      'Bảng cửu chương',
+                      'Bảng cửu chương'.tr(),
                       style: TextStyle(
                         fontSize: 20.sp,
                         fontWeight: FontWeight.w600,
@@ -187,14 +108,14 @@ class ContainerPractice<T> extends StatelessWidget {
                     spacing: 8.w,
                     runSpacing: 8.h,
                     children: List.generate(
-                      secondNumber,
+                      firstNumber,
                       (index) => DotContainer(dotCount: secondNumber),
                     ),
                   )
-              : secondNumber > 10 || firstNumber / secondNumber > 10
+              : secondNumber > 9 || firstNumber ~/ secondNumber > 9
               ? Center(
                 child: Text(
-                  'Bảng cửu chương',
+                  'Bảng cửu chương'.tr(),
                   style: TextStyle(
                     fontSize: 20.sp,
                     fontWeight: FontWeight.w600,
@@ -276,6 +197,7 @@ class ChonKetqua extends StatefulWidget {
     super.key,
     required this.currentMultiplication,
     required this.onShowNextMultiplication,
+    // required this.onShowNextMultiplication,
   });
 
   @override
@@ -288,6 +210,8 @@ class _ChonKetquaState extends State<ChonKetqua> {
   int? selectedAnswer;
   bool? isCorrectAnswer;
   bool isProcessing = false;
+  final GlobalKey<ManhinhnhapState> manhinhnhapKey =
+      GlobalKey<ManhinhnhapState>();
 
   final Random random = Random();
 
@@ -333,8 +257,6 @@ class _ChonKetquaState extends State<ChonKetqua> {
   }
 
   Future<void> _handleAnswerSelection(int selected) async {
-    if (widget.currentMultiplication == null || isProcessing) return;
-
     setState(() {
       isProcessing = true;
       selectedAnswer = selected;
@@ -353,24 +275,31 @@ class _ChonKetquaState extends State<ChonKetqua> {
       }
     });
 
-    await multiplicationProvider.recordAnswer(selected);
-
     if (isCorrect) {
+      //  animation
+      manhinhnhapKey.currentState?.startRotationAnimation();
+
       await Future.delayed(const Duration(seconds: 1));
+
+      await multiplicationProvider.recordAnswer(selected);
 
       if (!mounted) return;
 
-      if (multiplicationProvider.isPracticeComplete) {
+      // kiểm tra xem đã trả lời đúng 10 câu chưa
+      if (multiplicationProvider.correctAnswersCount >=
+          MultiplicationProvider.PRACTICE_SET_SIZE) {
         final settings = Provider.of<SettingsProvider>(context, listen: false);
-        settings.updateProcessing(
-          true,
-          (multiplicationProvider.sumStar(
-                multiplicationProvider.multiplications,
-              ) ~/
-              144 *
-              100),
-        );
+        final progress =
+            (multiplicationProvider.sumStar(
+                  multiplicationProvider.multiplications,
+                ) ~/
+                144 *
+                100);
 
+        settings.updateProcessing(true, progress);
+        print(
+          'số câu đúng : ${multiplicationProvider.correctAnswersCount} \n sô câu sai ${multiplicationProvider.wrongAnswersCount}}',
+        );
         Navigator.of(context).push(
           MaterialPageRoute(
             builder:
@@ -378,17 +307,13 @@ class _ChonKetquaState extends State<ChonKetqua> {
                   correctAnswers: multiplicationProvider.correctAnswersCount,
                   wrongAnswers: multiplicationProvider.wrongAnswersCount,
                   totalQuestions: MultiplicationProvider.PRACTICE_SET_SIZE,
-                  stars:
-                      multiplicationProvider.correctAnswersCount >= 8
-                          ? 3
-                          : multiplicationProvider.correctAnswersCount >= 5
-                          ? 2
-                          : 1,
                 ),
           ),
         );
       }
     } else {
+      // For wrong answers, record immediately
+      await multiplicationProvider.recordAnswer(selected);
       await Future.delayed(const Duration(milliseconds: 500));
     }
 
@@ -407,6 +332,11 @@ class _ChonKetquaState extends State<ChonKetqua> {
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       child: Column(
         children: [
+          Manhinhnhap(
+            key: manhinhnhapKey,
+            firstNumber: widget.currentMultiplication?.number1 ?? 0,
+            secondNumber: widget.currentMultiplication?.number2 ?? 0,
+          ),
           SizedBox(height: 16.h),
           GridView.count(
             shrinkWrap: true,
@@ -422,7 +352,9 @@ class _ChonKetquaState extends State<ChonKetqua> {
                       answer == widget.currentMultiplication?.result;
 
                   Color backgroundColor = TColors.yellow2;
-                  if (isSelected) {
+                  if (isWrong) {
+                    backgroundColor = Colors.red;
+                  } else if (isSelected) {
                     backgroundColor = isCorrect ? Colors.green : Colors.red;
                   }
 

@@ -20,15 +20,12 @@ class MultiplicationScreen extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
           child: Column(
             children: [
+              SizedBox(height: 16.h),
               ContainerPractice<Multiplication>(operation: mul),
               SizedBox(height: 8.h),
-              Manhinhnhap(firstNumber: mul.number1, secondNumber: mul.number2),
-              SizedBox(height: 84.h),
               ChonKetqua(
                 currentMultiplication: mul,
-                onShowNextMultiplication: () {
-                  // This will be handled by the provider
-                },
+                onShowNextMultiplication: () {},
               ),
             ],
           ),

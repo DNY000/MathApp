@@ -329,7 +329,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       TextButton(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text('Bạn đã bấm vào đây')),
+                            SnackBar(content: Text('Bạn đã bấm vào đây'.tr())),
                           );
                         },
                         child: Text(
@@ -370,7 +370,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           title: Text(
-            'Bạn có chắc chắn muốn xóa dữ liệu học tập của bạn?',
+            'Bạn có chắc chắn muốn xóa dữ liệu học tập của bạn?'.tr(),
             style: TextStyle(fontSize: 18.sp, fontWeight: FontWeight.w400),
             maxLines: 2,
           ),

@@ -78,9 +78,9 @@ class _ChangeLanguageScreenState extends State<ChangeLanguageScreen> {
       width: 100.w,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
-        color: isSelected ? TColors.backgroundBrown : Colors.white,
+        color: isSelected ? TColors.button : Colors.white,
         boxShadow: [
-          BoxShadow(offset: Offset(0, 2), color: TColors.backgroundBrown),
+          BoxShadow(offset: Offset(0, 3), color: TColors.backgroundBrown),
         ],
       ),
       child: Column(

@@ -68,7 +68,7 @@ class Home extends StatelessWidget {
                           ),
                     ),
                     CircleButton(
-                      height: 44,
+                      height: 44, // không cần .h vì đã làm ở cirlebutton
                       width: 44,
                       image: TImage.vietnam,
                       onPressed:
@@ -86,24 +86,24 @@ class Home extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
-                    'Bảng tính cửu chương'.tr(),
+                    'Bảng tính'.tr(),
                     style: TextStyle(
                       fontSize: TSizes.s32.h,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  // Text(
-                  //   'cửu chương'.tr(),
-                  //   style: TextStyle(
-                  //     fontSize: TSizes.s32.h,
-                  //     fontWeight: FontWeight.bold,
-                  //   ),
-                  // ),
+                  Text(
+                    'cửu chương'.tr(),
+                    style: TextStyle(
+                      fontSize: TSizes.s32.h,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ],
               ),
               SizedBox(height: 25.h),
               Padding(
-                padding: EdgeInsets.symmetric(horizontal: TSizes.pd50),
+                padding: EdgeInsets.symmetric(horizontal: TSizes.pd50.w),
                 child: Column(
                   children: [
                     Row(
@@ -112,13 +112,15 @@ class Home extends StatelessWidget {
                         BuidlCircleButon(
                           isSelected: isMultiplication,
                           operation: 'A x B',
-                          percentage: '$processingMul%',
+                          name: '$processingMul%',
+                          value: 0.2,
                         ),
                         SizedBox(width: 23.w),
                         BuidlCircleButon(
+                          value: 0,
                           isSelected: !isMultiplication,
                           operation: 'A : B',
-                          percentage: '$processingDivison%',
+                          name: '$processingDivison%',
                         ),
                       ],
                     ),
@@ -228,12 +230,14 @@ class Home extends StatelessWidget {
 class BuidlCircleButon extends StatelessWidget {
   bool isSelected;
   String operation;
-  String percentage;
+  String name;
+  double value;
   BuidlCircleButon({
     super.key,
     required this.isSelected,
     required this.operation,
-    required this.percentage,
+    required this.name,
+    required this.value,
   });
 
   @override
@@ -245,16 +249,13 @@ class BuidlCircleButon extends StatelessWidget {
       alignment: Alignment.center,
       children: [
         SizedBox(
-          height: 96.h,
-          width: 96.h,
+          height: 126.h,
+          width: 126.h,
           child: CircularProgressIndicator(
-            value: double.parse(percentage.replaceAll('%', '')) / 100,
-            strokeWidth: 4,
-            backgroundColor: Colors.grey[200],
-            color:
-                isSelected
-                    ? TColors.innerGreen
-                    : const Color.fromARGB(255, 185, 182, 182),
+            value: value,
+            strokeWidth: 2,
+            backgroundColor: isSelected ? Colors.green[50] : TColors.yellow,
+            color: isSelected ? TColors.innerGreen : TColors.yellow1,
           ),
         ),
         GestureDetector(
@@ -262,11 +263,14 @@ class BuidlCircleButon extends StatelessWidget {
             settingsProvider.updateMode(!isMultiplication);
           },
           child: Container(
-            height: 84.h,
-            width: 84.h,
+            height: 100.h,
+            width: 100.h,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: isSelected ? TColors.innerGreen : Colors.white,
+              border: Border(
+                bottom: BorderSide(color: TColors.backgroundBrown, width: 2.w),
+              ),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -279,7 +283,7 @@ class BuidlCircleButon extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  percentage,
+                  isSelected ? name : "",
                   style: TextStyle(
                     color: isSelected ? Colors.white : Colors.black,
                     fontSize: 14.sp,

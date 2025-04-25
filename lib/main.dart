@@ -15,7 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // khởi tạo bindings cho các bất đồng bộ
   await EasyLocalization.ensureInitialized();
 
-  // khởi tạo sharef
+  // khởi tạo sharedf
   await SharedPrefs.initialize();
 
   final settingsProvider = SettingsProvider();
@@ -36,14 +36,13 @@ void main() async {
       ],
       child: EasyLocalization(
         supportedLocales: const [
-          AppLocazications.engLocale,
           AppLocazications.viLocale,
+          AppLocazications.engLocale,
         ],
         path: AppLocazications.translationFile,
-        saveLocale: true, // tự động lưu
+        saveLocale: true,
         fallbackLocale: AppLocazications.viLocale,
-        startLocale:
-            AppLocazications.startLocale, // bắt đồng bằng ngôn ngữ Việt
+        startLocale: AppLocazications.viLocale,
         child: const MathApp(),
       ),
     ),

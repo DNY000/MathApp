@@ -1,6 +1,6 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:math_app/common/widgets/countdown_progress.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:math_app/ultis/t_image.dart';
@@ -12,11 +12,11 @@ class AdsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: TAppbar(
-        name: "Loại bỏ quảng cáo",
+        name: "Loại bỏ quảng cáo".tr(),
         showBack: true,
         showProcess: false,
         showAction: true,
-        actionText: 'khôi phục',
+        actionText: 'khôi phục'.tr(),
       ),
       body: Column(
         children: [

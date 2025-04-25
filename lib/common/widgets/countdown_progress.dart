@@ -22,6 +22,7 @@ class CountdownProgressState extends State<CountdownProgress> {
   late Timer _timer;
   double _timeLeft = 0;
   bool _isRunning = false;
+  bool _isCompleted = false;
 
   @override
   void initState() {
@@ -31,32 +32,51 @@ class CountdownProgressState extends State<CountdownProgress> {
   }
 
   void startTimer() {
-    if (_isRunning) return;
+    if (_isRunning || _timeLeft <= 0) return;
 
     _isRunning = true;
     _timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      if (_timeLeft > 0) {
-        setState(() {
-          _timeLeft -= 0.1;
-        });
-      } else {
-        stopTimer();
-        widget.onComplete();
-      }
+      setState(() {
+        _timeLeft = (_timeLeft - 0.1).clamp(
+          0,
+          widget.durationInSeconds.toDouble(),
+        );
+
+        if (_timeLeft <= 0 && !_isCompleted) {
+          _isCompleted = true;
+          stopTimer();
+          widget.onComplete();
+        }
+      });
     });
   }
 
   void stopTimer() {
-    _timer.cancel();
+    if (_timer.isActive) _timer.cancel();
     _isRunning = false;
+  }
+
+  void resumeTimer() {
+    if (!_isRunning && _timeLeft > 0) {
+      startTimer();
+    }
   }
 
   void resetTimer() {
     stopTimer();
     setState(() {
       _timeLeft = widget.durationInSeconds.toDouble();
+      _isCompleted = false;
     });
     startTimer();
+  }
+
+  @override
+  void dispose() {
+    if (_timer.isActive) {
+      _timer.cancel();
+    }
+    super.dispose();
   }
 
   @override
@@ -64,13 +84,12 @@ class CountdownProgressState extends State<CountdownProgress> {
     return Column(
       children: [
         LinearProgressIndicator(
-          // Sử dụng timeLeft/duration để có được progress mượt
           value: _timeLeft / widget.durationInSeconds,
           backgroundColor: TColors.button,
           valueColor: AlwaysStoppedAnimation<Color>(TColors.yellow1),
           minHeight: widget.height,
         ),
-        SizedBox(height: 4),
+        const SizedBox(height: 4),
       ],
     );
   }

@@ -14,10 +14,10 @@ class MultiplicationProvider with ChangeNotifier {
   SettingsModel _currentSettings;
   final List<AnswerRecord> _answerHistory = [];
   final List<AnswerRecord> _currentSessionAnswers = [];
-
-  // Practice properties
   List<Multiplication> _practiceSet = [];
+  List<Multiplication> listAnswerTesting = [];
   int _currentPracticeIndex = 0;
+  // ignore: constant_identifier_names
   static const int PRACTICE_SET_SIZE = 10;
   int _correctAnswersCount = 0;
 
@@ -40,29 +40,47 @@ class MultiplicationProvider with ChangeNotifier {
 
   List<Multiplication> get multiplications => _multiplications;
 
-  void setMultiplications(List<Multiplication> multiplications) {
-    _multiplications = multiplications;
+  // void setMultiplications(List<Multiplication> multiplications) {
+  //   _multiplications = multiplications;
+  //   notifyListeners();
+  // }
+  List<Multiplication> get10Answer() {
+    if (_multiplications.isEmpty) {
+      generateMultipleQuestions(100);
+    }
+    final List<Multiplication> tempList = List.from(_multiplications);
+    tempList.shuffle();
+    return tempList.take(10).toList();
+  }
+
+  // lay danh sách các phép tính cố số thứ nhất bằng number và số thứ 2 từ 0-11
+  void dsnumber(int number, List<Multiplication> ds) {
+    // Tạo danh sách mới chứa các phép tính từ 0-11 với số được chọn
+    ds = List.generate(12, (index) {
+      // Tìm phép tính tương ứng trong danh sách gốc
+      final existingMultiplication = ds.firstWhere(
+        (element) =>
+            element.number1 == number &&
+            element.number2 == index &&
+            element.star > 0,
+        orElse:
+            () => Multiplication(
+              number1: number,
+              number2: index,
+              result: number * index,
+              star: 0,
+            ),
+      );
+
+      print('Danh sách $existingMultiplication');
+
+      return existingMultiplication;
+    });
+
     notifyListeners();
   }
 
-  // lay danh sách các phép tính cố số thứ nhất bằng 2 và số thứ 2 nhỏ hơn hoặc bằng 11
-  // dk nữa là số sao lơn hơn 1()
-  void dsnumber(int number, List<Multiplication> ds) {
-    int n = sumStar(multiplications);
-    print('sô soa là $n');
-    listByNumber =
-        ds
-            .where(
-              (element) =>
-                  element.number1 == 1 &&
-                  element.number2 <= 11 &&
-                  element.star > 0,
-            )
-            .toList();
-    print(listByNumber.toString());
-  }
-
-  // Reset practice session
+  // xóa dữ liệu khi trả lời
   void resetPractice() {
     _practiceSet.clear();
     _currentPracticeIndex = 0;
@@ -71,7 +89,6 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Start new practice session
   void startPracticeSession() {
     resetPractice();
 
@@ -79,7 +96,6 @@ class MultiplicationProvider with ChangeNotifier {
       generateMultipleQuestions(100);
     }
 
-    // Randomly select questions based on settings
     final random = Random();
     final availableIndices = List.generate(_multiplications.length, (i) => i);
 
@@ -98,7 +114,6 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Load multiplications from SharedPreferences
   Future<void> _loadMultiplications() async {
     try {
       SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -133,9 +148,8 @@ class MultiplicationProvider with ChangeNotifier {
           await prefs.setInt('numberRangeEnd', currentNumberEnd);
 
           // Tạo mới danh sách
-          await _generateMultipleQuestionsAsync(100);
+          generateMultipleQuestions(100);
         } else {
-          // Nếu cài đặt không thay đổi, đọc danh sách từ SharedPreferences
           List<String>? encodedMultiplications = prefs.getStringList(
             'multiplications',
           );
@@ -146,8 +160,6 @@ class MultiplicationProvider with ChangeNotifier {
                 encodedMultiplications
                     .map((e) => Multiplication.fromJson(json.decode(e)))
                     .toList();
-          } else {
-            await _generateMultipleQuestionsAsync(100);
           }
         }
 
@@ -160,11 +172,10 @@ class MultiplicationProvider with ChangeNotifier {
     }
   }
 
-  // Generate multiple questions
+  // tạo  phép tính
   void generateMultipleQuestions(int count) {
     final random = Random();
 
-    // Use current settings
     final resultStart = _currentSettings.resultRange.start.toInt();
     final resultEnd = _currentSettings.resultRange.end.toInt();
     final numberStart = _currentSettings.numberRange.start.toInt();
@@ -177,13 +188,11 @@ class MultiplicationProvider with ChangeNotifier {
     while (_multiplications.length < count && attempts < maxAttempts) {
       attempts++;
 
-      // Generate numbers within current number range
       int number1 = numberStart + random.nextInt(numberEnd - numberStart + 1);
       int number2 = numberStart + random.nextInt(numberEnd - numberStart + 1);
 
       int result = number1 * number2;
 
-      // Verify result is within current result range
       if (result >= resultStart && result <= resultEnd) {
         Multiplication multiplication = Multiplication(
           number1: number1,
@@ -202,7 +211,7 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Save multiplications to SharedPreferences
+  // lưu vào bộ nhơ local
   Future<void> saveMultiplications() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> encodedMultiplications =
@@ -213,14 +222,14 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Handle settings changes
+  // Kiểm tra seting thay đổi
   void onSettingsChanged() {
     _currentSettings = settingsProvider.settings;
+    //xóa dữ liệu  luyện tập
 
-    // Reset practice session
     resetPractice();
 
-    // Tạo danh sách mới trong Future để không chặn UI thread
+    /// xóa dữ liệu local
     Future(() async {
       try {
         SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -231,9 +240,6 @@ class MultiplicationProvider with ChangeNotifier {
         // Xóa danh sách cũ
         _multiplications.clear();
 
-        // Tạo danh sách mới trong background
-        await _generateMultipleQuestionsAsync(100);
-
         // Cập nhật phép tính hiện tại và bắt đầu phiên luyện tập mới
         _setRandomCurrentMultiplication();
         startPracticeSession();
@@ -243,112 +249,38 @@ class MultiplicationProvider with ChangeNotifier {
     });
   }
 
-  // Tạo danh sách phép tính bất đồng bộ để không làm đơ UI
-  Future<void> _generateMultipleQuestionsAsync(int count) async {
-    final random = Random();
-
-    // Lấy thông số cài đặt hiện tại
-    final resultStart = _currentSettings.resultRange.start.toInt();
-    final resultEnd = _currentSettings.resultRange.end.toInt();
-    final numberStart = _currentSettings.numberRange.start.toInt();
-    final numberEnd = _currentSettings.numberRange.end.toInt();
-
-    List<Multiplication> newList = [];
-    int attempts = 0;
-    const maxAttempts = 500;
-
-    // Tạo từng phép tính, nhưng không chặn UI thread
-    while (newList.length < count && attempts < maxAttempts) {
-      attempts++;
-
-      // Tạo số trong khoảng cho phép
-      int number1 = numberStart + random.nextInt(numberEnd - numberStart + 1);
-      int number2 = numberStart + random.nextInt(numberEnd - numberStart + 1);
-
-      int result = number1 * number2;
-
-      // Kiểm tra kết quả trong khoảng cho phép
-      if (result >= resultStart && result <= resultEnd) {
-        Multiplication multiplication = Multiplication(
-          number1: number1,
-          number2: number2,
-          result: result,
-          star: 0,
-        );
-
-        if (!newList.contains(multiplication)) {
-          newList.add(multiplication);
-        }
-      }
-
-      // Cho phép UI cập nhật mỗi 20 phép tính
-      if (newList.length % 20 == 0) {
-        await Future.delayed(Duration.zero);
-      }
-    }
-
-    // Cập nhật danh sách và lưu vào SharedPreferences
-    _multiplications = newList;
-
-    // Lưu danh sách mới vào SharedPreferences
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> encodedMultiplications =
-        _multiplications
-            .map((multiplication) => json.encode(multiplication.toJson()))
-            .toList();
-
-    await prefs.setStringList('multiplications', encodedMultiplications);
-
-    // Lưu cài đặt hiện tại
-    await prefs.setInt('resultRangeStart', resultStart);
-    await prefs.setInt('resultRangeEnd', resultEnd);
-    await prefs.setInt('numberRangeStart', numberStart);
-    await prefs.setInt('numberRangeEnd', numberEnd);
-
-    notifyListeners();
-  }
-
-  // Record answer and handle UI updates
+  // ghi lại câu trả lời
   Future<void> recordAnswer(int selectedAnswer) async {
     if (_currentMultiplication == null) return;
 
     final bool isCorrect = selectedAnswer == _currentMultiplication!.result;
 
-    // Create answer record
     final answerRecord = AnswerRecord(
       number1: _currentMultiplication!.number1,
       number2: _currentMultiplication!.number2,
       result: _currentMultiplication!.result,
       selectedAnswer: selectedAnswer,
       isCorrect: isCorrect,
+      start: _currentMultiplication!.star,
     );
 
-    // Add to history
     _answerHistory.add(answerRecord);
     _currentSessionAnswers.add(answerRecord);
 
     if (isCorrect) {
       _correctAnswersCount++;
 
-      // Update star rating
       updateStar(true);
-
-      // Wait for visual feedback
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Move to next question if not complete
-      if (!isPracticeComplete) {
-        if (_currentPracticeIndex < _practiceSet.length - 1) {
-          _currentPracticeIndex++;
-          _currentMultiplication = _practiceSet[_currentPracticeIndex];
-        } else {
-          startPracticeSession();
-        }
+      // await Future.delayed(const Duration(seconds: 1));
+      if (!isPracticeComplete &&
+          _currentPracticeIndex < _practiceSet.length - 1) {
+        _currentPracticeIndex++;
+        _currentMultiplication = _practiceSet[_currentPracticeIndex];
       }
     } else {
       updateStar(false);
     }
-
+    print('Tổng số sao hiện tại: ${sumStar(_multiplications)}');
     notifyListeners();
   }
 
@@ -364,9 +296,21 @@ class MultiplicationProvider with ChangeNotifier {
 
     if (index != -1) {
       int currentStar = _multiplications[index].star;
-      int newStar = isCorrect ? currentStar + 1 : currentStar - 1;
-      newStar = newStar.clamp(0, 5);
+      int newStar = currentStar;
 
+      if (isCorrect) {
+        // Tăng số sao nếu trả lời đúng, tối đa 5 sao
+        if (currentStar < 5) {
+          newStar = currentStar + 1;
+        }
+      } else {
+        // Giảm số sao nếu trả lời sai, tối thiểu 0 sao
+        if (currentStar > 0) {
+          newStar = currentStar - 1;
+        }
+      }
+
+      // Cập nhật số sao trong danh sách phép tính
       _multiplications[index] = Multiplication(
         number1: _currentMultiplication!.number1,
         number2: _currentMultiplication!.number2,
@@ -375,25 +319,40 @@ class MultiplicationProvider with ChangeNotifier {
       );
 
       _currentMultiplication = _multiplications[index];
+
+      // Lưu thay đổi vào SharedPreferences
+      saveMultiplications();
+
+      // In tổng số sao sau khi cập nhật
+      print('Tổng số sao hiện tại: ${sumStar(_multiplications)}');
+      notifyListeners();
     }
   }
 
-  // Retry current session
+  // tạo phiên bản luyện tập mới
   void retryCurrentSession() {
     if (_currentSessionAnswers.isEmpty) return;
 
-    // Create new practice set from current session answers
     _practiceSet =
-        _currentSessionAnswers
-            .map(
-              (record) => Multiplication(
-                number1: record.number1,
-                number2: record.number2,
-                result: record.result,
-                star: 0,
-              ),
-            )
-            .toList();
+        _currentSessionAnswers.map((record) {
+          // Tìm phép nhân tương ứng trong _multiplications
+          final multiplication = _multiplications.firstWhere(
+            (m) => m.number1 == record.number1 && m.number2 == record.number2,
+            orElse:
+                () => Multiplication(
+                  number1: record.number1,
+                  number2: record.number2,
+                  result: record.result,
+                  star: 0,
+                ),
+          );
+          return Multiplication(
+            number1: record.number1,
+            number2: record.number2,
+            result: record.result,
+            star: multiplication.star,
+          );
+        }).toList();
 
     _currentPracticeIndex = 0;
     _currentMultiplication = _practiceSet[0];
@@ -403,12 +362,12 @@ class MultiplicationProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Set random current multiplication
   void _setRandomCurrentMultiplication() {
     if (_multiplications.isNotEmpty) {
       final random = Random();
       _currentMultiplication =
           _multiplications[random.nextInt(_multiplications.length)];
+
       notifyListeners();
     } else {
       generateMultipleQuestions(100);
@@ -424,18 +383,26 @@ class MultiplicationProvider with ChangeNotifier {
 
     // Tạo practice set mới từ các câu trả lời đúng
     _practiceSet =
-        correctAnswers
-            .map(
-              (record) => Multiplication(
-                number1: record.number1,
-                number2: record.number2,
-                result: record.result,
-                star: 0,
-              ),
-            )
-            .toList();
+        correctAnswers.map((record) {
+          // Tìm phép nhân tương ứng trong _multiplications
+          final multiplication = _multiplications.firstWhere(
+            (m) => m.number1 == record.number1 && m.number2 == record.number2,
+            orElse:
+                () => Multiplication(
+                  number1: record.number1,
+                  number2: record.number2,
+                  result: record.result,
+                  star: 0,
+                ),
+          );
+          return Multiplication(
+            number1: record.number1,
+            number2: record.number2,
+            result: record.result,
+            star: multiplication.star,
+          );
+        }).toList();
 
-    // Nếu có nhiều hơn PRACTICE_SET_SIZE câu, chọn ngẫu nhiên PRACTICE_SET_SIZE câu
     if (_practiceSet.length > PRACTICE_SET_SIZE) {
       _practiceSet.shuffle();
       _practiceSet = _practiceSet.sublist(0, PRACTICE_SET_SIZE);
@@ -461,7 +428,8 @@ class MultiplicationProvider with ChangeNotifier {
 class AnswerRecord {
   int number1;
   int number2;
-  int result; // correct result
+  int result;
+  int start; // correct result
   int selectedAnswer; // user's selected answer
   final bool isCorrect;
 
@@ -471,29 +439,6 @@ class AnswerRecord {
     required this.result,
     required this.selectedAnswer,
     required this.isCorrect,
+    required this.start,
   });
-}
-
-class AnswerRecordProvider extends ChangeNotifier {
-  List<AnswerRecord> listAnswer = [];
-  void addAnswer({
-    required int number1,
-    required int number2,
-    required int result,
-    required bool isCorrect,
-  }) {
-    AnswerRecord a = AnswerRecord(
-      number1: number1,
-      number2: number2,
-      result: result,
-      selectedAnswer: 0,
-      isCorrect: isCorrect,
-    );
-    listAnswer.add(a);
-    notifyListeners();
-  }
-
-  void cleanAnswer() {
-    listAnswer.clear();
-  }
 }

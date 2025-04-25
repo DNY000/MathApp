@@ -128,6 +128,7 @@ class DivisionProvider with ChangeNotifier {
       result: _currentDivision!.result,
       selectedAnswer: selectedAnswer,
       isCorrect: isCorrect,
+      start: _currentDivision!.star,
     );
 
     // Add to history
@@ -401,5 +402,14 @@ class DivisionProvider with ChangeNotifier {
       0,
       (previousValue, divison) => previousValue + divison.star,
     );
+  }
+
+  List<Division> get10AnswerDivison() {
+    if (_divisions.isEmpty) {
+      generateMultipleQuestions(100);
+    }
+    final List<Division> tempList = List.from(_divisions);
+    tempList.shuffle();
+    return tempList.take(10).toList();
   }
 }

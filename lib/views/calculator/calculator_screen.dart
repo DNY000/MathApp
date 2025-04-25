@@ -2,6 +2,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:math_app/models/multiplication.dart';
 import 'package:math_app/viewmodel/multiplication_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -26,7 +27,7 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
     return Scaffold(
       backgroundColor: TColors.yellow1,
-      appBar: TAppbar(name: 'Bảng Tính'.tr(), showBack: true),
+      appBar: TAppbar(name: 'calculator'.tr(), showBack: true),
       body: Padding(
         padding: EdgeInsets.only(left: 29.w, right: 29.w, top: 17.h),
         child: Column(
@@ -163,10 +164,9 @@ class ButtonNumber extends StatelessWidget {
   }
 }
 
-// ignore: must_be_immutable
 class CustomRatingBar extends StatelessWidget {
-  int count;
-  CustomRatingBar({super.key, this.count = 1});
+  const CustomRatingBar({super.key, this.count = 1});
+  final int count;
 
   @override
   Widget build(BuildContext context) {
@@ -195,26 +195,43 @@ class CalculatorRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final settingProvider = Provider.of<SettingsProvider>(context);
+    final mulProvider = Provider.of<MultiplicationProvider>(context);
     bool isMul = settingProvider.settings.isMultiplication;
-    int number2 = index; // Tính number1
-    int number1 = index * number; // Tính number2
+    int number2 = index;
+    int result = number * number2;
+
+    // Tìm số sao thực tế của phép tính này
+    int actualStars = 0;
+    if (mulProvider.listByNumber.isNotEmpty) {
+      final multiplication = mulProvider.listByNumber.firstWhere(
+        (m) => m.number1 == number && m.number2 == number2,
+        orElse:
+            () => Multiplication(
+              number1: number,
+              number2: number2,
+              result: result,
+              star: 0,
+            ),
+      );
+      actualStars = multiplication.star;
+    }
 
     return Column(
       children: [
-        CustomRatingBar(count: 0),
+        CustomRatingBar(count: actualStars), // Hiển thị số sao thực tế
         SizedBox(height: 6.h),
         SizedBox(
           height: 21.h,
-          width: 120.w, // Điều chỉnh chiều rộng để hiển thị đầy đủ
+          width: 120.w,
           child:
               isMul
                   ? Text(
-                    ' $number x $number2 = $number1 ', // Hiển thị kết quả
+                    ' $number x $number2 = $result ',
                     style: TextStyle(fontSize: 18.sp),
                     textAlign: TextAlign.center,
                   )
                   : Text(
-                    ' $number1 : $number = $number2 ', // Hiển thị kết quả
+                    ' $result : $number = $number2 ',
                     style: TextStyle(fontSize: 18.sp),
                     textAlign: TextAlign.center,
                   ),

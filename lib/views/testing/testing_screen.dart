@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/countdown_progress.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
-
+import 'package:math_app/models/division.dart';
+import 'package:math_app/models/multiplication.dart';
 import 'package:math_app/viewmodel/multiplication_provider.dart';
 import 'package:math_app/viewmodel/division_provider.dart';
 import 'package:math_app/viewmodel/settings_provider.dart';
@@ -20,13 +21,13 @@ class TestingScreen extends StatefulWidget {
 
 class _TestingScreenState extends State<TestingScreen> {
   String userAnswer = '';
-  List<Map<String, dynamic>> _questions = [];
+  List<dynamic> questionsMixed = [];
   int currentQuestionIndex = 0;
   List<AnswerRecord> answerHistory = [];
   bool isProcessing = false;
   bool showResult = false;
   bool isTimeUp = false;
-  bool isLoading = true;
+
   final GlobalKey<CountdownProgressState> _countdownKey = GlobalKey();
 
   @override
@@ -37,7 +38,7 @@ class _TestingScreenState extends State<TestingScreen> {
     });
   }
 
-  void _initQuestions() {
+  void _initQuestions() async {
     final settingsProvider = Provider.of<SettingsProvider>(
       context,
       listen: false,
@@ -50,39 +51,13 @@ class _TestingScreenState extends State<TestingScreen> {
           context,
           listen: false,
         );
-        final allQuestions = List.from(provider.multiplications);
-        allQuestions.shuffle();
-        _questions =
-            allQuestions
-                .take(10)
-                .map(
-                  (m) => {
-                    'number1': m.number1,
-                    'number2': m.number2,
-                    'result': m.result,
-                    'type': 'multiplication',
-                  },
-                )
-                .toList();
+        questionsMixed = provider.get10Answer();
       } else {
         final provider = Provider.of<DivisionProvider>(context, listen: false);
-        final allQuestions = List.from(provider.divisions);
-        allQuestions.shuffle();
-        _questions =
-            allQuestions
-                .take(10)
-                .map(
-                  (d) => {
-                    'number1': d.number1,
-                    'number2': d.number2,
-                    'result': d.result,
-                    'type': 'division',
-                  },
-                )
-                .toList();
+        questionsMixed = provider.get10AnswerDivison();
       }
-      isLoading = false;
     });
+    await Future.delayed(const Duration(seconds: 2));
   }
 
   void onTimeUp() {
@@ -91,7 +66,7 @@ class _TestingScreenState extends State<TestingScreen> {
   }
 
   void onNumberPress(int number) {
-    if (userAnswer.length < 3 && !isProcessing && !isTimeUp) {
+    if (userAnswer.length < 4 && !isProcessing && !isTimeUp) {
       setState(() {
         userAnswer += number.toString();
       });
@@ -102,12 +77,27 @@ class _TestingScreenState extends State<TestingScreen> {
     handleAnswer(userAnswer);
   }
 
-  void handleAnswer(String answer) {
-    if (_questions.isEmpty) return;
+  void handleAnswer(String answer) async {
+    if (questionsMixed.isEmpty) return;
 
-    final currentQuestion = _questions[currentQuestionIndex];
+    final currentQuestion = questionsMixed[currentQuestionIndex];
     final int userResult = int.tryParse(answer) ?? 0;
-    final int correctResult = currentQuestion['result'] as int;
+    late int correctResult;
+    late int number1;
+    late int number2;
+
+    if (currentQuestion is Multiplication) {
+      correctResult = currentQuestion.result;
+      number1 = currentQuestion.number1;
+      number2 = currentQuestion.number2;
+    } else if (currentQuestion is Division) {
+      correctResult = currentQuestion.result;
+      number1 = currentQuestion.number1;
+      number2 = currentQuestion.number2;
+    } else {
+      return;
+    }
+
     final bool isCorrect = userResult == correctResult;
 
     setState(() {
@@ -116,11 +106,12 @@ class _TestingScreenState extends State<TestingScreen> {
 
       answerHistory.add(
         AnswerRecord(
-          number1: currentQuestion['number1'] as int,
-          number2: currentQuestion['number2'] as int,
+          number1: number1,
+          number2: number2,
           result: correctResult,
           selectedAnswer: userResult,
           isCorrect: isCorrect,
+          start: 0,
         ),
       );
     });
@@ -139,7 +130,6 @@ class _TestingScreenState extends State<TestingScreen> {
                   correctAnswers: correctCount,
                   wrongAnswers: 10 - correctCount,
                   totalQuestions: 10,
-                  stars: (correctCount * 3) ~/ 10,
                   answerHistory: answerHistory,
                   isTesting: true,
                 ),
@@ -160,125 +150,108 @@ class _TestingScreenState extends State<TestingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final setting = Provider.of<SettingsProvider>(context, listen: false);
-    final bool checkResult = setting.settings.resultRange.end > 100;
-    if (isLoading) {
-      return Scaffold(
-        backgroundColor: TColors.yellow2,
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+    final settingsProvider = Provider.of<SettingsProvider>(context);
+    final bool checkResult = settingsProvider.settings.resultRange.end > 100;
+    Future.delayed(Duration(seconds: 2));
+    return Consumer<SettingsProvider>(
+      builder: (context, settings, child) {
+        if (questionsMixed.isEmpty) {
+          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+
+        final currentQuestion = questionsMixed[currentQuestionIndex];
+
+        String questionText;
+        if (currentQuestion is Multiplication) {
+          questionText =
+              '${currentQuestion.number1} × ${currentQuestion.number2} = ';
+        } else if (currentQuestion is Division) {
+          questionText =
+              '${currentQuestion.number1} ÷ ${currentQuestion.number2} = ';
+        } else {
+          questionText = '?';
+        }
+
+        return Scaffold(
+          appBar: TAppbar(
+            name: 'Kiểm tra (${currentQuestionIndex + 1}/10)',
+            showBack: true,
+          ),
+          body: Column(
             children: [
-              CircularProgressIndicator(
-                color: TColors.borderbrown,
-                strokeWidth: 3.w,
+              CountdownProgress(
+                key: _countdownKey,
+                durationInSeconds: 15,
+                height: 8.h,
+                onComplete: onTimeUp,
               ),
-              SizedBox(height: 16.h),
-              Text(
-                'Đang tải...',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  color: TColors.borderbrown,
-                  fontWeight: FontWeight.w500,
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
+                child: Column(
+                  children: [
+                    Container(
+                      height: 127.h,
+                      width: 343.w,
+                      decoration: BoxDecoration(
+                        color: TColors.yellow,
+                        borderRadius: BorderRadius.circular(12.r),
+                      ),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              questionText,
+                              style: TextStyle(
+                                fontSize: 24.sp,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Container(
+                              height: 46.h,
+                              width: checkResult ? 68.w : 46.w,
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8.r),
+                                border: Border.all(color: TColors.borderbrown),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  userAnswer.isEmpty ? '?' : userAnswer,
+                                  style: TextStyle(
+                                    fontSize: 24.sp,
+                                    fontWeight: FontWeight.w600,
+                                    color: TColors.borderbrown,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 104.h),
+                    BanPhim(
+                      onNumberPress: onNumberPress,
+                      onCancelPress: () {
+                        if (!isProcessing && userAnswer.isNotEmpty) {
+                          setState(() {
+                            userAnswer = userAnswer.substring(
+                              0,
+                              userAnswer.length - 1,
+                            );
+                          });
+                        }
+                      },
+                      onCheckPress: onCheckPress,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-        ),
-      );
-    }
-
-    if (_questions.isEmpty) {
-      return const Scaffold(body: Center(child: Text('Không có câu hỏi')));
-    }
-
-    final currentQuestion = _questions[currentQuestionIndex];
-    final settingsProvider = Provider.of<SettingsProvider>(context);
-    final isMul = settingsProvider.settings.isMultiplication;
-
-    return Scaffold(
-      appBar: TAppbar(
-        name: 'Kiểm tra (${currentQuestionIndex + 1}/10)',
-        showBack: true,
-      ),
-      body: Column(
-        children: [
-          CountdownProgress(
-            key: _countdownKey,
-            durationInSeconds: 15,
-            height: 8.h,
-            onComplete: onTimeUp,
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 24.h),
-            child: Column(
-              children: [
-                Container(
-                  height: 127.h,
-                  width: 343.w,
-                  decoration: BoxDecoration(
-                    color: TColors.yellow,
-                    borderRadius: BorderRadius.circular(12.r),
-                  ),
-                  child: Center(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '${currentQuestion['number1']} ${isMul ? '×' : '÷'} ${currentQuestion['number2']} = ',
-                          style: TextStyle(
-                            fontSize: 24.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Container(
-                          height: 46.h,
-                          width: checkResult ? 68.w : 46.w,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(8.r),
-                            border: Border.all(color: TColors.borderbrown),
-                          ),
-                          child: Center(
-                            child: Text(
-                              userAnswer.isEmpty ? '?' : userAnswer,
-                              style: TextStyle(
-                                fontSize: 24.sp,
-                                fontWeight: FontWeight.w600,
-                                color:
-                                    showResult
-                                        ? (answerHistory.last.isCorrect
-                                            ? Colors.green
-                                            : Colors.red)
-                                        : Colors.black,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                SizedBox(height: 104.h),
-                BanPhim(
-                  onNumberPress: onNumberPress,
-                  onCancelPress: () {
-                    if (!isProcessing && userAnswer.isNotEmpty) {
-                      setState(() {
-                        userAnswer = userAnswer.substring(
-                          0,
-                          userAnswer.length - 1,
-                        );
-                      });
-                    }
-                  },
-                  onCheckPress: onCheckPress,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
