@@ -9,7 +9,8 @@ import 'package:provider/provider.dart';
 import 'package:easy_localization/easy_localization.dart';
 
 class AnswerList extends StatelessWidget {
-  const AnswerList({super.key});
+  final List<AnswerRecord> list;
+  const AnswerList({super.key, required this.list});
 
   @override
   Widget build(BuildContext context) {
@@ -19,28 +20,31 @@ class AnswerList extends StatelessWidget {
     return Scaffold(
       backgroundColor: TColors.yellow2,
       appBar: TAppbar(name: 'Danh sách câu trả lời'.tr(), showBack: true),
-      body: isMul ? _buildMultiplicationList() : _buildDivisionList(),
+      body:
+          isMul
+              ? _buildAnswerList(context: context, list)
+              : _buildDivisionList(),
     );
   }
 
-  Widget _buildMultiplicationList() {
-    return Consumer<MultiplicationProvider>(
-      builder: (context, provider, child) {
-        return _buildAnswerList(
-          provider.answerHistory,
-          isMultiplication: true,
-          context: context,
-        );
-      },
-    );
-  }
+  // Widget _buildMultiplicationList() {
+  //   return Consumer<MultiplicationProvider>(
+  //     builder: (context, provider, child) {
+  //       return _buildAnswerList(
+  //         provider.answerHistory,
+  //         isMultiplication: true,
+  //         context: context,
+  //       );
+  //     },
+  //   );
+  // }
 
   Widget _buildDivisionList() {
     return Consumer<DivisionProvider>(
       builder: (context, provider, child) {
         return _buildAnswerList(
           provider.answerHistory,
-          isMultiplication: false,
+          // isMultiplication: false,
           context: context,
         );
       },
@@ -49,7 +53,7 @@ class AnswerList extends StatelessWidget {
 
   Widget _buildAnswerList(
     List<AnswerRecord> answers, {
-    required bool isMultiplication,
+    // required bool isMultiplication,
     required BuildContext context,
   }) {
     if (answers.isEmpty) {
@@ -102,9 +106,9 @@ class AnswerList extends StatelessWidget {
                         SizedBox(
                           width: 120.w,
                           child: Text(
-                            isMultiplication
-                                ? '${answer.number1} × ${answer.number2}'
-                                : '${answer.number1} ÷ ${answer.number2}',
+                            // isMultiplication
+                            '${answer.number1} × ${answer.number2}',
+                            // : '${answer.number1} ÷ ${answer.number2}',,
                             style: TextStyle(
                               fontSize: 20.sp,
                               fontWeight: FontWeight.w500,

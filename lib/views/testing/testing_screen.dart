@@ -25,20 +25,19 @@ class _TestingScreenState extends State<TestingScreen> {
   int currentQuestionIndex = 0;
   List<AnswerRecord> answerHistory = [];
   bool isProcessing = false;
-  bool showResult = false;
   bool isTimeUp = false;
 
   final GlobalKey<CountdownProgressState> _countdownKey = GlobalKey();
-
+  static const int maxAnswerLength = 4;
+  static const int totalQuestions = 10;
+  int counter = 1;
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initQuestions();
-    });
+    _initQuestions();
   }
 
-  void _initQuestions() async {
+  void _initQuestions() {
     final settingsProvider = Provider.of<SettingsProvider>(
       context,
       listen: false,
@@ -57,7 +56,6 @@ class _TestingScreenState extends State<TestingScreen> {
         questionsMixed = provider.get10AnswerDivison();
       }
     });
-    await Future.delayed(const Duration(seconds: 2));
   }
 
   void onTimeUp() {
@@ -66,7 +64,7 @@ class _TestingScreenState extends State<TestingScreen> {
   }
 
   void onNumberPress(int number) {
-    if (userAnswer.length < 4 && !isProcessing && !isTimeUp) {
+    if (userAnswer.length < maxAnswerLength && !isProcessing && !isTimeUp) {
       setState(() {
         userAnswer += number.toString();
       });
@@ -75,10 +73,22 @@ class _TestingScreenState extends State<TestingScreen> {
 
   void onCheckPress() {
     handleAnswer(userAnswer);
+    counter++;
   }
 
-  void handleAnswer(String answer) async {
-    if (questionsMixed.isEmpty) return;
+  bool isValidQuestionIndex() {
+    return currentQuestionIndex >= 0 &&
+        currentQuestionIndex < questionsMixed.length;
+  }
+
+  void handleAnswer(String answer) {
+    if (questionsMixed.isEmpty || !isValidQuestionIndex() || isProcessing) {
+      return;
+    }
+
+    setState(() {
+      isProcessing = true;
+    });
 
     final currentQuestion = questionsMixed[currentQuestionIndex];
     final int userResult = int.tryParse(answer) ?? 0;
@@ -100,63 +110,55 @@ class _TestingScreenState extends State<TestingScreen> {
 
     final bool isCorrect = userResult == correctResult;
 
-    setState(() {
-      isProcessing = true;
-      showResult = true;
+    answerHistory.add(
+      AnswerRecord(
+        number1: number1,
+        number2: number2,
+        result: correctResult,
+        selectedAnswer: userResult,
+        isCorrect: isCorrect,
+        start: 0,
+      ),
+    );
+    // final currentHistory = List<AnswerRecord>.from(answerHistory);
+    //currentQuestionIndex >= totalQuestions
+    if (counter >= 9) {
+      final correctCount = answerHistory.where((a) => a.isCorrect).length;
 
-      answerHistory.add(
-        AnswerRecord(
-          number1: number1,
-          number2: number2,
-          result: correctResult,
-          selectedAnswer: userResult,
-          isCorrect: isCorrect,
-          start: 0,
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (context) => CompleteScreen(
+                correctAnswers: correctCount,
+                wrongAnswers: totalQuestions - correctCount,
+                totalQuestions: totalQuestions,
+                answerHistory: answerHistory,
+                isTesting: true,
+              ),
         ),
       );
-    });
-
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (!mounted) return;
-
-      if (currentQuestionIndex >= 9) {
-        final correctCount = answerHistory.where((a) => a.isCorrect).length;
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder:
-                (context) => CompleteScreen(
-                  correctAnswers: correctCount,
-                  wrongAnswers: 10 - correctCount,
-                  totalQuestions: 10,
-                  answerHistory: answerHistory,
-                  isTesting: true,
-                ),
-          ),
-        );
-      } else {
-        setState(() {
-          currentQuestionIndex++;
-          userAnswer = '';
-          showResult = false;
-          isProcessing = false;
-          isTimeUp = false;
-        });
-        _countdownKey.currentState?.resetTimer();
-      }
-    });
+    } else {
+      setState(() {
+        currentQuestionIndex++;
+        userAnswer = '';
+        isProcessing = false;
+        isTimeUp = false;
+      });
+      _countdownKey.currentState?.resetTimer();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<SettingsProvider>(context);
     final bool checkResult = settingsProvider.settings.resultRange.end > 100;
-    Future.delayed(Duration(seconds: 2));
+
     return Consumer<SettingsProvider>(
       builder: (context, settings, child) {
-        if (questionsMixed.isEmpty) {
-          return Scaffold(body: Center(child: CircularProgressIndicator()));
+        print('danh sách phép chia : ${questionsMixed}');
+        if (questionsMixed.isEmpty || !isValidQuestionIndex()) {
+          return Scaffold(body: Center(child: Text('Không có câu hỏi')));
         }
 
         final currentQuestion = questionsMixed[currentQuestionIndex];
@@ -174,7 +176,7 @@ class _TestingScreenState extends State<TestingScreen> {
 
         return Scaffold(
           appBar: TAppbar(
-            name: 'Kiểm tra (${currentQuestionIndex + 1}/10)',
+            name: 'Kiểm tra (${currentQuestionIndex + 1}/$totalQuestions)',
             showBack: true,
           ),
           body: Column(

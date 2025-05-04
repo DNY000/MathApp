@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
+import 'package:math_app/viewmodel/multiplication_provider.dart';
 import 'package:math_app/views/settings/container_setting.dart';
 import 'package:math_app/ultis/colors.dart';
 import 'package:provider/provider.dart';
@@ -18,14 +19,11 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void dispose() {
-    // Không gọi Provider trong dispose() để tránh lỗi
-    // Thay vào đó, sẽ tự động cập nhật khi mở màn hình luyện tập
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // ignore: deprecated_member_use
     return Scaffold(
       backgroundColor: const Color(0xFFFFFDF3),
       appBar: TAppbar(name: 'Cài đặt'.tr(), showBack: true),
@@ -79,7 +77,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       children: [
                         Padding(
-                          padding: EdgeInsets.only(top: 17.h),
+                          padding: EdgeInsets.only(top: 12.h, bottom: 8.h),
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: Text(
@@ -146,7 +144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       children: [
                         Padding(
-                          padding: EdgeInsets.only(top: 19.h),
+                          padding: EdgeInsets.only(top: 12.h, bottom: 8.h),
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: Text(
@@ -204,7 +202,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     child: Column(
                       children: [
                         Padding(
-                          padding: EdgeInsets.only(top: 20.h, bottom: 20.h),
+                          padding: EdgeInsets.only(top: 12.h, bottom: 8.h),
                           child: Align(
                             alignment: Alignment.topLeft,
                             child: Text(
@@ -267,7 +265,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                               'Hiện khối trong khi học tập:'.tr(),
                               style: TextStyle(fontSize: 14.sp),
                             ),
-                            const Spacer(),
+                            SizedBox(width: 16.w),
                             _customCheckbox(
                               settings.showBlocks,
                               onChanged:
@@ -301,7 +299,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ],
                     ),
                   ),
-                  SizedBox(height: 20.h),
+                  SizedBox(height: 16.h),
                   Row(
                     children: [
                       Container(
@@ -312,7 +310,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         child: TextButton.icon(
                           onPressed:
                               () => showAlertDialog(context, () {
-                                settingsProvider.resetSettings();
+                                settingsProvider.resetStar();
+                                final provider =
+                                    Provider.of<MultiplicationProvider>(
+                                      context,
+                                      listen: false,
+                                    );
+                                provider.resetAllStars();
                                 Navigator.pop(context);
                               }),
                           icon: const Icon(Icons.delete, color: Colors.black),
@@ -320,7 +324,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             'Xóa tiến trình'.tr(),
                             style: TextStyle(
                               color: Colors.black,
-                              fontSize: 14.sp,
+                              fontSize: 16.sp,
                             ),
                           ),
                         ),

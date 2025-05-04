@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
@@ -12,7 +13,7 @@ class AnswerListTesting extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: TColors.yellow2,
-      appBar: TAppbar(name: 'Danh sách câu trả lời', showBack: true),
+      appBar: TAppbar(name: 'Danh sách câu trả lời'.tr(), showBack: true),
       body: Padding(
         padding: EdgeInsets.only(
           top: 18.h,
@@ -56,7 +57,7 @@ class AnswerListTesting extends StatelessWidget {
                       ),
                       children: [
                         TextSpan(
-                          text: '${answer.number1} × ${answer.number2} = ',
+                          text: '${answer.number1} : ${answer.number2} = ',
                         ),
                         TextSpan(
                           text: '${answer.selectedAnswer}',

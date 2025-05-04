@@ -16,7 +16,7 @@ class CompleteScreen extends StatelessWidget {
   final int totalQuestions;
 
   final bool isTesting;
-  final List<AnswerRecord>? answerHistory;
+  final List<AnswerRecord> answerHistory;
 
   const CompleteScreen({
     super.key,
@@ -24,7 +24,7 @@ class CompleteScreen extends StatelessWidget {
     required this.wrongAnswers,
     this.totalQuestions = 10,
 
-    this.answerHistory,
+    required this.answerHistory,
     this.isTesting = false,
   });
 
@@ -37,7 +37,6 @@ class CompleteScreen extends StatelessWidget {
     final isMul = settingsProvider.settings.isMultiplication;
     final mul = Provider.of<MultiplicationProvider>(context);
     final int process = isTesting ? 0 : mul.sumStar(mul.multiplications);
-
     return Scaffold(
       appBar: TAppbar(name: 'Kết quả'.tr(), showBack: false),
       body: Padding(
@@ -50,7 +49,7 @@ class CompleteScreen extends StatelessWidget {
               Transform.rotate(
                 angle: 7.26 * 3.14159 / 180,
                 child: Text(
-                  'Tiến trình học\ntập của bạn',
+                  'Tiến trình học\ntập của bạn'.tr(),
                   style: TextStyle(
                     fontSize: 15.sp,
                     color: TColors.borderbrown,
@@ -113,9 +112,9 @@ class CompleteScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder:
                         (context) =>
-                            isTesting && answerHistory != null
-                                ? AnswerListTesting(list: answerHistory!)
-                                : const AnswerList(),
+                            isTesting
+                                ? AnswerListTesting(list: answerHistory)
+                                : AnswerList(list: answerHistory),
                   ),
                 );
               },
@@ -152,6 +151,14 @@ class CompleteScreen extends StatelessWidget {
               textColor: Colors.black,
               borderColor: Colors.black12,
               onTap: () {
+                Provider.of<DivisionProvider>(
+                  context,
+                  listen: false,
+                ).resetPractice();
+                Provider.of<MultiplicationProvider>(
+                  context,
+                  listen: false,
+                ).resetPractice();
                 Navigator.of(context).popUntil((route) => route.isFirst);
               },
             ),
@@ -198,7 +205,7 @@ class CompleteScreen extends StatelessWidget {
     String text,
     IconData icon, {
     VoidCallback? onTap,
-    Color backgroundColor = const Color(0xFFFFE0B2),
+    Color backgroundColor = TColors.backgroundBrown,
     Color textColor = Colors.black,
     Color? borderColor,
   }) {
@@ -209,7 +216,7 @@ class CompleteScreen extends StatelessWidget {
         height: 56.h,
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(28.r),
+          borderRadius: BorderRadius.circular(12.r),
           border: borderColor != null ? Border.all(color: borderColor) : null,
         ),
         child: Row(

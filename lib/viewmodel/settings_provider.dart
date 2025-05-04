@@ -33,16 +33,16 @@ class SettingsProvider extends ChangeNotifier {
   }
 
   // Notify all listeners that settings have changed
-  void notifySettingsChanged() {
-    notifyListeners();
-  }
+  // void notifySettingsChanged() {
+  //   notifyListeners();
+  // }
 
   // Update methods for each setting
   void updateMode(bool isMultiplication) {
     _settings = _settings.copyWith(isMultiplication: isMultiplication);
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   void updateProcessing(bool isMultiplication, int processing) {
@@ -53,56 +53,77 @@ class SettingsProvider extends ChangeNotifier {
     }
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   void updateResultRange(RangeValues range) {
-    _settings = _settings.copyWith(resultRange: range);
+    final numberRange = _settings.numberRange;
+    if (range.start < numberRange.start || range.end < numberRange.end) {
+      final adjustedRange = RangeValues(1, 90000);
+      _settings = _settings.copyWith(resultRange: adjustedRange);
+    } else {
+      final litmitedRange = RangeValues(
+        range.start < 1
+            ? 1
+            : range.start > range.end
+            ? 1
+            : range.start,
+        range.end > 90000 ? 90000 : range.end,
+      );
+      _settings = _settings.copyWith(resultRange: litmitedRange);
+    }
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
   }
 
   void updateNumberRange(RangeValues range) {
-    _settings = _settings.copyWith(numberRange: range);
+    final limitedRange = RangeValues(
+      range.start < 1
+          ? 1
+          : range.start > range.end
+          ? 1
+          : range.start,
+      range.end > 300 ? 300 : range.end,
+    );
+    _settings = _settings.copyWith(numberRange: limitedRange);
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   void updateCheckAnswer(bool value) {
     _settings = _settings.copyWith(checkAnswer: value);
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   void updateCheckNumberRange(bool value) {
     _settings = _settings.copyWith(checkNumberRange: value);
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   void updatePracticePercentage(double value) {
     _settings = _settings.copyWith(practicePercentage: value);
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   void updateShowBlocks(bool value) {
     _settings = _settings.copyWith(showBlocks: value);
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   void updateAnswerTime(int seconds) {
     _settings = _settings.copyWith(answerTimeSeconds: seconds);
     _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
   }
 
   // Reset settings to defaults
@@ -110,6 +131,12 @@ class SettingsProvider extends ChangeNotifier {
     _settings = SettingsModel();
     await _saveSettings();
     notifyListeners();
-    notifySettingsChanged();
+    // notifySettingsChanged();
+  }
+
+  Future<void> resetStar() async {
+    _settings = _settings.copyWith(processingDivison: 0, processingMul: 0);
+    await _saveSettings();
+    notifyListeners();
   }
 }

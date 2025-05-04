@@ -45,6 +45,8 @@ class Home extends StatelessWidget {
     final bool isMultiplication = settingsProvider.settings.isMultiplication;
     final int processingMul = settingsProvider.settings.processingMul;
     final int processingDivison = settingsProvider.settings.processingDivison;
+    final locale = context.locale;
+    bool isVN = locale.languageCode == "vi";
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
@@ -70,7 +72,7 @@ class Home extends StatelessWidget {
                     CircleButton(
                       height: 44, // không cần .h vì đã làm ở cirlebutton
                       width: 44,
-                      image: TImage.vietnam,
+                      image: isVN ? TImage.vietnam : TImage.coanh,
                       onPressed:
                           () => Navigator.push(
                             context,
@@ -113,11 +115,11 @@ class Home extends StatelessWidget {
                           isSelected: isMultiplication,
                           operation: 'A x B',
                           name: '$processingMul%',
-                          value: 0.2,
+                          value: processingMul / 100,
                         ),
                         SizedBox(width: 23.w),
                         BuidlCircleButon(
-                          value: 0,
+                          value: processingDivison / 100,
                           isSelected: !isMultiplication,
                           operation: 'A : B',
                           name: '$processingDivison%',

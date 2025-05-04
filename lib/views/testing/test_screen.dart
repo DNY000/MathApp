@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/common/widgets/t_appbar.dart';
@@ -12,42 +13,44 @@ class TestScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: TAppbar(name: 'Kiểm tra', showBack: true),
+      appBar: TAppbar(name: 'Kiểm tra'.tr(), showBack: true),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Padding(
             padding: EdgeInsets.only(top: 47.h, left: 64.w, right: 64.w),
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 273.h,
-                  width: 344.w,
-                  child: Image.asset(TImage.image1, fit: BoxFit.cover),
-                ),
-                SizedBox(height: 44.h),
-                SizedBox(
-                  height: 56.h,
-                  width: 271.w,
-                  child: Center(
-                    child: Text(
-                      'Bài kiểm tra gồm 10 câu hỏi, có giới hạn thời gian mỗi câu',
-                      maxLines: 2,
-                      style: TextStyle(
-                        fontSize: 20.sp,
-                        fontWeight: FontWeight.w400,
-                        color: TColors.textBack,
-                      ),
-                    ),
+            child: SizedBox(
+              height: 273.h,
+              width: 344.w,
+              child: Image.asset(TImage.image1, fit: BoxFit.cover),
+            ),
+          ),
+          SizedBox(height: 44.h),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24.w),
+            child: SizedBox(
+              height: 56.h,
+              width: double.infinity,
+              child: Center(
+                child: Text(
+                  'Bài kiểm tra gồm 10 câu hỏi, có giới hạn thời gian mỗi câu'
+                      .tr(),
+                  maxLines: 2,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 20.sp,
+                    fontWeight: FontWeight.w400,
+                    color: TColors.textBack,
                   ),
                 ),
-              ],
+              ),
             ),
           ),
           Padding(
             padding: EdgeInsets.only(top: 11.h),
             child: Center(
               child: Text(
-                'Chúc bạn may mắn!!',
+                'Chúc bạn may mắn!!'.tr(),
                 style: TextStyle(
                   fontSize: 20.sp,
                   fontWeight: FontWeight.w400,
@@ -56,9 +59,9 @@ class TestScreen extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: 44.h),
+          SizedBox(height: 54.h),
           SizedBox(
-            height: 85.h,
+            height: 65.h,
             width: 343.w,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -75,7 +78,7 @@ class TestScreen extends StatelessWidget {
                     MaterialPageRoute(builder: (context) => TestingScreen()),
                   ),
               child: Text(
-                'Sẵn sàng',
+                'Sẵn sàng'.tr(),
                 style: TextStyle(
                   fontSize: 18.sp,
                   fontWeight: FontWeight.w500,

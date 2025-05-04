@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/models/division.dart';
+import 'package:math_app/viewmodel/division_provider.dart';
 import 'package:math_app/views/Practice/complete_srceen.dart';
 import 'package:math_app/views/Practice/division_screen.dart';
 import 'package:math_app/views/Practice/multiplicationo_screen.dart';
@@ -37,8 +38,6 @@ class _PracticeScreenState extends State<PracticeScreen> {
           context,
           listen: false,
         );
-
-        // Only start a new practice session if there isn't one already
         if (multiplicationProvider.practiceSet.isEmpty) {
           multiplicationProvider.startPracticeSession();
         }
@@ -53,13 +52,30 @@ class _PracticeScreenState extends State<PracticeScreen> {
     return Consumer<SettingsProvider>(
       builder: (context, settingsProvider, child) {
         final bool isMul = settingsProvider.settings.isMultiplication;
+        final int currentValue =
+            Provider.of<MultiplicationProvider>(
+              context,
+              listen: true,
+            ).correctAnswersCount +
+            1;
+        final int currentValueDivis =
+            Provider.of<DivisionProvider>(
+              context,
+              listen: true,
+            ).correctAnswersCount +
+            1;
+        final int totalLeson = settingsProvider.settings.sumCount + 1;
+        // Bạn có thể thay đổi giá trị này từ provider
         return Scaffold(
           appBar: TAppbar(
-            name: 'Bài học'.tr(),
+            name: '${'Bài học'.tr()} $totalLeson',
             showBack: true,
             showProcess: true,
             processing: 1,
+            showAction: true,
+            actionText: isMul ? '$currentValue/10' : '$currentValueDivis/10',
           ),
+
           body: isMul ? MultiplicationScreen() : DivisionScreen(),
         );
       },
@@ -230,6 +246,7 @@ class _ChonKetquaState extends State<ChonKetqua> {
         isCorrectAnswer = null;
         wrongAnswers.clear();
         isProcessing = false;
+        manhinhnhapKey.currentState?.updateStars(0);
       });
       _generateAnswerOptions();
     }
@@ -263,10 +280,7 @@ class _ChonKetquaState extends State<ChonKetqua> {
     });
 
     final bool isCorrect = selected == widget.currentMultiplication!.result;
-    final multiplicationProvider = Provider.of<MultiplicationProvider>(
-      context,
-      listen: false,
-    );
+    final multiplicationProvider = context.read<MultiplicationProvider>();
 
     setState(() {
       isCorrectAnswer = isCorrect;
@@ -276,11 +290,23 @@ class _ChonKetquaState extends State<ChonKetqua> {
     });
 
     if (isCorrect) {
-      //  animation
-      manhinhnhapKey.currentState?.startRotationAnimation();
+      // Animation và cập nhật sao - sử dụng addPostFrameCallback
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && manhinhnhapKey.currentState != null) {
+          // Reset số sao hiện tại trước
+          manhinhnhapKey.currentState!.updateStars(0);
+
+          // Tính toán số sao mới
+          int currentStar = multiplicationProvider.currentMultiplication!.star;
+          int newStar = currentStar < 5 ? currentStar + 1 : currentStar;
+
+          // Cập nhật UI với số sao mới
+          manhinhnhapKey.currentState!.updateStars(newStar);
+          manhinhnhapKey.currentState!.startRotationAnimation();
+        }
+      });
 
       await Future.delayed(const Duration(seconds: 1));
-
       await multiplicationProvider.recordAnswer(selected);
 
       if (!mounted) return;
@@ -289,60 +315,89 @@ class _ChonKetquaState extends State<ChonKetqua> {
       if (multiplicationProvider.correctAnswersCount >=
           MultiplicationProvider.PRACTICE_SET_SIZE) {
         final settings = Provider.of<SettingsProvider>(context, listen: false);
+        settings.settings.sumCount++;
         final progress =
             (multiplicationProvider.sumStar(
                   multiplicationProvider.multiplications,
-                ) ~/
-                144 *
-                100);
+                ) *
+                100 ~/
+                144);
 
         settings.updateProcessing(true, progress);
-        print(
-          'số câu đúng : ${multiplicationProvider.correctAnswersCount} \n sô câu sai ${multiplicationProvider.wrongAnswersCount}}',
+
+        int wrongAnswersCount = multiplicationProvider.wrongAnswersCount;
+        int correctAnswersCount = multiplicationProvider.correctAnswersCount;
+
+        final currentHistory = List<AnswerRecord>.from(
+          multiplicationProvider.answerHistory,
         );
+
         Navigator.of(context).push(
           MaterialPageRoute(
             builder:
                 (context) => CompleteScreen(
-                  correctAnswers: multiplicationProvider.correctAnswersCount,
-                  wrongAnswers: multiplicationProvider.wrongAnswersCount,
+                  correctAnswers: correctAnswersCount,
+                  wrongAnswers: wrongAnswersCount,
                   totalQuestions: MultiplicationProvider.PRACTICE_SET_SIZE,
+                  answerHistory: currentHistory,
+                  isTesting: false,
                 ),
           ),
         );
       }
+
+      // Chỉ reset trạng thái khi trả lời đúng và đã hoàn thành quá trình
+      if (mounted) {
+        setState(() {
+          selectedAnswer = null;
+          isCorrectAnswer = null;
+          isProcessing = false;
+        });
+      }
     } else {
+      // Cập nhật sao khi trả lời sai
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && manhinhnhapKey.currentState != null) {
+          // Tính toán số sao mới khi trả lời sai (giảm 1 sao)
+          int currentStar = multiplicationProvider.currentMultiplication!.star;
+          int newStar = currentStar > 0 ? currentStar - 1 : 0;
+
+          // Cập nhật UI với số sao mới
+          manhinhnhapKey.currentState!.updateStars(newStar);
+        }
+      });
+
       // For wrong answers, record immediately
       await multiplicationProvider.recordAnswer(selected);
       await Future.delayed(const Duration(milliseconds: 500));
-    }
 
-    if (mounted) {
-      setState(() {
-        selectedAnswer = null;
-        isCorrectAnswer = null;
-        isProcessing = false;
-      });
+      // Chỉ reset trạng thái isProcessing để cho phép tiếp tục chọn,
+      // nhưng giữ nguyên selectedAnswer và isCorrectAnswer để giữ hiển thị màu đỏ
+      if (mounted) {
+        setState(() {
+          isProcessing = false;
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-      child: Column(
-        children: [
-          Manhinhnhap(
-            key: manhinhnhapKey,
-            firstNumber: widget.currentMultiplication?.number1 ?? 0,
-            secondNumber: widget.currentMultiplication?.number2 ?? 0,
-          ),
-          SizedBox(height: 16.h),
-          GridView.count(
+    return Column(
+      children: [
+        Manhinhnhap(
+          key: manhinhnhapKey,
+          firstNumber: widget.currentMultiplication?.number1 ?? 0,
+          secondNumber: widget.currentMultiplication?.number2 ?? 0,
+        ),
+        SizedBox(height: 63.h),
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 14.w),
+          child: GridView.count(
             shrinkWrap: true,
             crossAxisCount: 2,
-            mainAxisSpacing: 16.h,
-            crossAxisSpacing: 16.w,
+            mainAxisSpacing: 24.h,
+            crossAxisSpacing: 18.w,
             childAspectRatio: 1.5,
             children:
                 dsketqua.map((answer) {
@@ -415,8 +470,8 @@ class _ChonKetquaState extends State<ChonKetqua> {
                   );
                 }).toList(),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -437,7 +492,7 @@ class AnswerContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 119.h,
-      width: 160.w,
+      width: 159.w,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16.r),
         boxShadow: [

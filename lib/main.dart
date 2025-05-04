@@ -32,7 +32,6 @@ void main() async {
           create:
               (_) => MultiplicationProvider(settingsProvider: settingsProvider),
         ),
-        // ChangeNotifierProvider(create: (_) => AnswerRecordProvider()),
       ],
       child: EasyLocalization(
         supportedLocales: const [

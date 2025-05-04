@@ -35,7 +35,7 @@ class AdsScreen extends StatelessWidget {
           SizedBox(height: 18.h),
           Center(
             child: Text(
-              'Select a plan that’s right for you',
+              'Chọn một kết hoạch phù hợp cho bạn'.tr(),
               style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w400),
             ),
           ),
@@ -69,7 +69,7 @@ class AdsScreen extends StatelessWidget {
                         Image.asset(TImage.vuongmien),
                         SizedBox(width: 12.w),
                         Text(
-                          'Once and for all',
+                          'Một lần và mãi mãi'.tr(),
                           style: TextStyle(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w500,
@@ -104,7 +104,7 @@ class AdsScreen extends StatelessWidget {
                         ),
                         onPressed: () {},
                         child: Text(
-                          'Most popular',
+                          'Phổ biến'.tr(),
                           style: TextStyle(
                             fontSize: 13.sp,
                             fontWeight: FontWeight.w700,
@@ -117,7 +117,7 @@ class AdsScreen extends StatelessWidget {
                   SizedBox(height: 18.h),
                   Center(
                     child: Text(
-                      'Pay once to remove ads forever',
+                      "Thanh toán một lần để loại bỏ quảng cao mãi mãi".tr(),
                       style: TextStyle(
                         fontSize: 15.sp,
                         fontWeight: FontWeight.w400,
@@ -170,7 +170,7 @@ class AdsScreen extends StatelessWidget {
                         Image.asset(TImage.video, color: TColors.borderbrown),
                         SizedBox(width: 12.w),
                         Text(
-                          'Daily',
+                          'Hằng ngày'.tr(),
                           style: TextStyle(
                             fontSize: 15.sp,
                             fontWeight: FontWeight.w500,
@@ -184,7 +184,8 @@ class AdsScreen extends StatelessWidget {
                   Expanded(
                     child: Center(
                       child: Text(
-                        'You watch an ad to disable all ads on one day',
+                        'Bạn xem một quảng cáo để tắt tất cả quảng cáo trong một ngày'
+                            .tr(),
                         style: TextStyle(
                           fontSize: 15.sp,
                           fontWeight: FontWeight.w400,
@@ -210,7 +211,7 @@ class AdsScreen extends StatelessWidget {
               ),
               onPressed: () {},
               child: Text(
-                'Tiếp tục',
+                'Tiếp tục'.tr(),
                 style: TextStyle(
                   fontSize: 18.sp,
                   color: TColors.textBack,

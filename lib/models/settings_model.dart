@@ -23,7 +23,7 @@ class SettingsModel {
     this.answerTimeSeconds = 15,
     this.processingDivison = 0,
     this.processingMul = 0,
-    this.sumCount = 0,
+    this.sumCount = 1,
   });
 
   // Convert to JSON for storage
@@ -64,7 +64,7 @@ class SettingsModel {
       answerTimeSeconds: json['answerTimeSeconds'] ?? 15,
       processingDivison: json['processingDivison'] ?? 0.0,
       processingMul: json['processingMul'] ?? 0.0,
-      sumCount: json['sumCount'] ?? 0,
+      sumCount: json['sumCount'] ?? 1,
     );
   }
 

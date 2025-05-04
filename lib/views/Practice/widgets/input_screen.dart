@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:math_app/ultis/colors.dart';
+import 'package:math_app/viewmodel/division_provider.dart';
 import 'package:math_app/viewmodel/multiplication_provider.dart';
 import 'package:math_app/viewmodel/settings_provider.dart';
 import 'package:math_app/views/calculator/calculator_screen.dart';
@@ -27,17 +28,32 @@ class Manhinhnhap extends StatefulWidget {
 class ManhinhnhapState extends State<Manhinhnhap>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-
+  late final Animation<double> _animation;
   bool isAnimating = false;
+  int currentStars = 0; // Lưu số sao hiện tại trên UI
+
+  void updateStars(int newStarCount) {
+    // Sử dụng addPostFrameCallback để đảm bảo setState được gọi sau khi build hoàn tất
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          currentStars = newStarCount;
+        });
+      }
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-
+    _animation = Tween(
+      begin: 0.0,
+      end: pi,
+    ).animate(_controller); // Chỉ lật 180 độ
     _controller.addStatusListener((status) {
       if (status == AnimationStatus.completed) {
         _controller.reset();
@@ -46,6 +62,23 @@ class ManhinhnhapState extends State<Manhinhnhap>
         });
       }
     });
+  }
+
+  @override
+  void didUpdateWidget(Manhinhnhap oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reset currentStars khi phép tính thay đổi
+    if (widget.firstNumber != oldWidget.firstNumber ||
+        widget.secondNumber != oldWidget.secondNumber) {
+      // Sử dụng addPostFrameCallback để đảm bảo setState được gọi sau khi build hoàn tất
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            currentStars = 0;
+          });
+        }
+      });
+    }
   }
 
   @override
@@ -69,8 +102,13 @@ class ManhinhnhapState extends State<Manhinhnhap>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, child) {
-        return Transform.rotate(
-          angle: _controller.value * pi,
+        final angle = _animation.value;
+        final transform =
+            Matrix4.identity()
+              ..setEntry(3, 2, 0.001)
+              ..rotateY(angle); // Lật theo chiều ngang (trục Y)
+        return Transform(
+          transform: transform,
           alignment: Alignment.center,
           child: Container(
             height: 127.h,
@@ -85,14 +123,39 @@ class ManhinhnhapState extends State<Manhinhnhap>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Selector<MultiplicationProvider, int>(
-                    builder:
-                        (context, value, child) =>
-                            CustomRatingBar(count: value),
-                    selector: (p0, p1) => p1.currentMultiplication!.star,
-                    shouldRebuild: (previous, next) => true,
-                    // luôn cập nhật khi có thay đổi
-                  ),
+                  isMul
+                      ? Consumer<MultiplicationProvider>(
+                        builder: (context, provider, child) {
+                          bool isSameOperation =
+                              provider.currentMultiplication?.number1 ==
+                                  widget.firstNumber &&
+                              provider.currentMultiplication?.number2 ==
+                                  widget.secondNumber;
+
+                          int starCount =
+                              (currentStars > 0 && isSameOperation)
+                                  ? currentStars
+                                  : provider.currentMultiplication?.star ?? 0;
+
+                          return CustomRatingBar(count: starCount);
+                        },
+                      )
+                      : Consumer<DivisionProvider>(
+                        builder: (context, provider, child) {
+                          bool isSameOperation =
+                              provider.currentDivision?.number1 ==
+                                  widget.firstNumber &&
+                              provider.currentDivision?.number2 ==
+                                  widget.secondNumber;
+
+                          int starCount =
+                              (currentStars > 0 && isSameOperation)
+                                  ? currentStars
+                                  : provider.currentDivision?.star ?? 0;
+
+                          return CustomRatingBar(count: starCount);
+                        },
+                      ),
                   SizedBox(height: 30.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
